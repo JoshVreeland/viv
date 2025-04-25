@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 2rem;
+        }
+        img {
+            height: 100px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #eee;
+        }
+        .page-break {
+            page-break-before: always;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Page 1: Claim Package -->
+    <img src="{{ logo_path }}" alt="Logo">
+    <h1>Claim Package</h1>
+    <p>{{ claim_text | replace('\n', '<br>') | safe }}</p>
+
+    <!-- Page 2: Contents Estimate -->
+    <div class="page-break"></div>
+    <img src="{{ logo_path }}" alt="Logo">
+    <h1>Contents Estimate</h1>
+
+    <p>
+        <b>Claimant:</b> {{ claimant }}<br>
+        <b>Property:</b> {{ property }}<br>
+        <b>Estimator:</b> {{ estimator }}<br>
+        <b>Estimate Type:</b> {{ estimate_type }}<br>
+        <b>Date Entered:</b> {{ date_entered }}<br>
+        <b>Date Completed:</b> {{ date_completed }}
+    </p>
+
+    <h2>Itemized Table</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Category</th>
+                <th>Justification</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% if rows %}
+            {% for row in rows %}
+                <tr>
+                    <td>{{ row.category or '—' }}</td>
+                    <td>{{ row.justification or '—' }}</td>
+                    <td>
+                        {% if row.total is not none %}
+                            ${{ "%.2f"|format(row.total) }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td colspan="3" style="text-align: center;">No data provided.</td>
+            </tr>
+        {% endif %}
+        </tbody>
+    </table>
+
+</body>
+</html>
+
+

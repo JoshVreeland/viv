@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Claim Package</title>
+    <style>
+      body {
+        font-family: 'Lato', sans-serif;
+        padding: 2rem;
+        background-color: #FFFDFA;
+        max-width: 900px;
+        margin: auto;
+      }
+      textarea {
+        width: 100%;
+        padding: 10px;
+        font-family: 'Lato', monospace;
+        font-size: 1rem;
+        line-height: 1.4;
+        white-space: pre-wrap;
+        overflow-wrap: break-word;
+        resize: vertical;
+      }
+      button {
+        padding: 10px 20px;
+        font-weight: bold;
+      }
+    </style>
+</head>
+<body>
+
+        <div style="
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    ">
+        <a href="/clients"
+        style="
+            padding: 10px 20px;
+            font-weight: bold;
+            text-align: center;
+            text-decoration: none;
+            color: #3D4335;
+            border: 2px solid #3D4335;
+            border-radius: 8px;
+            background-color: #F8F8F8;
+        ">
+        View Client Files
+        </a>
+    
+        <a href="/admin/dashboard"
+        style="
+            padding: 10px 20px;
+            font-weight: bold;
+            text-align: center;
+            text-decoration: none;
+            color: #3D4335;
+        ">
+        ← Back to Dashboard
+        </a>
+    </div>
+    
+    <!-- Page title -->
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <img src="/static/logo2.png" alt="Logo" style="height: 100px;">
+        <h1 style="margin-top: 1rem; color: #3D4335;">Claim Package</h1>
+    </div>
+    
+
+    <form action="/contents-estimate" method="post">
+        <textarea
+          name="claim_text"
+          rows="15"
+          placeholder="Enter claim package text here…"
+          required
+          style="width:100%; padding:10px; font-family:'Lato', sans-serif; font-size:1rem; line-height:1.4; resize:vertical;"
+        ></textarea>
+        <br><br>
+        <input type="hidden" name="client_name" value="{{ client_name }}">
+        <button
+          type="submit"
+          style="font-family:'Lato', sans-serif; padding:10px 20px; font-weight:bold; color:#3D4335"
+        >
+          Next: Contents Estimate
+        </button>
+      </form>      
+
+    <script>
+    (function() {
+      document.addEventListener('keydown', function(e) {
+        const t = e.target;
+        if (t.tagName === 'TEXTAREA' && t.name === 'claim_text') {
+          // Tab → real tab
+          if (e.key === 'Tab') {
+            e.preventDefault();
+            const s = t.selectionStart;
+            t.value = t.value.slice(0, s) + '\t' + t.value.slice(t.selectionEnd);
+            t.selectionStart = t.selectionEnd = s + 1;
+          }
+          // Ctrl+B → bullet
+          else if (e.ctrlKey && e.key.toLowerCase() === 'b') {
+            e.preventDefault();
+            const s = t.selectionStart;
+            t.value = t.value.slice(0, s) + '• ' + t.value.slice(s);
+            t.selectionStart = t.selectionEnd = s + 2;
+          }
+        }
+      });
+    })();
+    </script>
+</body>
+</html>
+
+
+
+
+

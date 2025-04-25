@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Client Files - VivClaims</title>
+</head>
+<body style="font-family: Playfair Display, serif; background-color: #FEFDF9; padding: 3rem;">
+
+    <!-- Top bar with “Add New Client” and “Back to Dashboard” -->
+    <div style="
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    ">
+        <a href="/claim-package"
+           style="
+               display: inline-block;
+               padding: 8px 16px;
+               background-color: #3A4031;
+               color: #FEFCF9;
+               text-decoration: none;
+               border: 1px solid #3D4335;
+               border-radius: 8px;
+               font-weight: bold;
+           ">
+            + Add New Client
+        </a>
+
+        <a href="/admin/dashboard"
+           style="
+               padding: 10px 20px;
+               font-weight: bold;
+               text-align: center;
+               text-decoration: none;
+               color: #3D4335;
+           ">
+            ← Back to Dashboard
+        </a>
+    </div>
+
+    <h1 style="color: #3D4335; text-align: center;">Client Files</h1>
+
+    <form method="GET" action="/clients"
+        style="display:flex; gap:1rem; justify-content:center; margin:1rem 0;">
+    <label style="font-weight:bold; color:#3D4335;">
+    Uploader:
+    <select name="uploader_email"
+            style="padding:4px; margin-left:4px;">
+        <option value="">All</option>
+        {% for u in users %}
+        <option value="{{ u.email }}"
+            {% if filter_uploader == u.email %} selected{% endif %}>
+            {{ u.email }}
+        </option>
+        {% endfor %}
+    </select>
+    </label>
+
+    <!-- Month dropdown -->
+    <label style="font-weight:bold; color:#3D4335;">
+        Month:
+        <select name="month" style="padding:4px; margin-left:4px;">
+        <option value="">All</option>
+        {% set month_names = [
+            "January","February","March","April","May","June",
+            "July","August","September","October","November","December"
+        ] %}
+        {% for idx in range(1,13) %}
+            <option value="{{ idx }}"
+            {% if filter_month == idx %} selected{% endif %}>
+            {{ month_names[idx-1] }}
+            </option>
+        {% endfor %}
+        </select>
+    </label>
+
+
+    <!-- Year input (or you could make it a dropdown too) -->
+    <label style="font-weight:bold; color:#3D4335;">
+        Year:
+        {% set years = [2022, 2023, 2024, 2025, 2026, 2027] %}
+        <select name="year" style="padding:4px; margin-left:4px;">
+          {% for y in years %}
+            <option value="{{ y }}"
+              {% if (filter_year is none and y == 2025) or (filter_year == y) %} selected{% endif %}>
+              {{ y }}
+            </option>
+          {% endfor %}
+        </select>
+      </label>
+
+    <button type="submit"
+        style="
+        padding:6px 12px;
+        background:#3A4031;
+        color:#FEFCF9;
+        border:none;
+        border-radius:4px;
+        font-weight:bold;
+        cursor:pointer;
+        ">
+    Filter
+    </button>
+
+    <a href="/clients"
+    style="
+    padding:6px 12px;
+    background:transparent;
+    color:#3D4335;
+    border:1px solid #3D4335;
+    border-radius:4px;
+    font-weight:bold;
+    text-decoration:none;
+    display:flex;
+    align-items:center;
+    ">
+    Clear
+    </a>
+    </form>
+
+    {% if event_count is not none %}
+      <p style="
+          font-weight: bold;
+          color: #3D4335;
+          text-align: center;
+          margin: 1rem 0;
+      ">
+        {{ event_count }} client{{ event_count != 1 and 's' or '' }} added
+        {% if filter_month and filter_year %}
+          in {{ "%02d"|format(filter_month) }}/{{ filter_year }}
+        {% elif filter_year %}
+          in {{ filter_year }}
+        {% endif %}
+      </p>
+    {% endif %}
+
+    <input type="text" id="search" placeholder="Search clients..."
+        style="
+            width: 100%;
+            padding: 12px;
+            margin: 20px 0;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        ">
+
+    <ul id="file-list" style="list-style: none; padding: 0;">
+      {% for file in files %}
+        <li style="margin: 10px 0;">
+          <span style="
+              font-size: 1.1rem;
+              font-weight: bold;
+              color: #1F1F1F;
+          ">
+            {{ file.client_name }}
+          </span><br>
+          <div style="display: inline-flex; gap: 2rem; align-items: center;">
+            <a href="/finalized_pdfs/{{ file.excel_path.split('/')[-1] }}"
+               style="color: #1F1F1F; text-decoration: none;">
+              Download Excel
+            </a>
+            <a href="/finalized_pdfs/{{ file.pdf_path.split('/')[-1] }}"
+               style="color: #1F1F1F; text-decoration: none;">
+              Download PDF
+            </a>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <script>
+        const search = document.getElementById("search");
+        const list   = document.getElementById("file-list");
+        const items  = Array.from(list.children);
+
+        search.addEventListener("input", () => {
+            const term = search.value.toLowerCase();
+            items.forEach(item => {
+                item.style.display =
+                  item.textContent.toLowerCase().includes(term)
+                    ? "block"
+                    : "none";
+            });
+        });
+    </script>
+
+</body>
+</html>
+
+

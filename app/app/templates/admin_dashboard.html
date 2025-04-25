@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard</title>
+  <style>
+    body { font-family: Lato, sans-serif; background-color: #F6F6F6; margin: 0; padding: 2rem; display: flex; justify-content: center; }
+    #container { width: 100%; max-width: 900px; background-color: #FEFDF9; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); padding: 2rem; }
+    header { text-align: center; margin-bottom: 2rem; }
+    header img { height: 80px; margin-bottom: 1rem; }
+    header h1 { color: #3a4031; font-size: 2rem; margin: 0; }
+    .button-group { display: flex; justify-content: center; gap: 1rem; margin-bottom: 2rem; }
+    .btn { padding: 0.75rem 1.5rem; background-color: #3a4031; color: #FFFFFF; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; text-decoration: none; display: inline-block; }
+    .btn:hover { background-color: #515845; }
+    section { margin-bottom: 2rem; }
+    section h2 { color: #14213D; font-size: 1.25rem; margin-bottom: 0.5rem; }
+    table { width: 100%; border-collapse: collapse; }
+    table th, table td { border-bottom: 1px solid #E5E5E5; padding: 0.75rem; text-align: left; color: #1F1F1F; }
+    table th { background-color: #E5E5E5; font-weight: bold; }
+    .download-link { text-decoration: none; color: #007C91; font-weight: 500; }
+    .download-link:hover { text-decoration: underline; }
+    .no-files { color: #6C7A89; text-align: center; }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <header>
+      <img src="/static/logo2.png" alt="Merizō AI Logo">
+      <h1>Admin Dashboard</h1>
+    </header>
+
+    <div class="button-group">
+      <a href="/claim-package" class="btn">Add Client</a>
+      <a href="/admin/add-admin" class="btn">Add Admin</a>
+      <a href="/clients" class="btn">Client Files</a>
+    </div>
+  </div>
+</body>
+</html>
