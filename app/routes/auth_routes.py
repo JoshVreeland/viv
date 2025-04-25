@@ -34,6 +34,8 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         hashed_password=hash_password(user.password),
         is_admin=True,
         is_superadmin=False
+        is_temp_password=True  # ✅ Add this line
+
     )
     db.add(new_user)
     db.commit()
@@ -69,6 +71,12 @@ def login_post(
             {"request": request, "error": "Not authorized"},
             status_code=status.HTTP_403_FORBIDDEN
         )
+
+    if user.is_temp_password:
+        resp = RedirectResponse(url="/change-password", status_code=status.HTTP_302_FOUND)
+    else:
+        resp = RedirectResponse(url="/admin/dashboard", status_code=status.HTTP_302_FOUND)
+
 
     # in app/routes/auth_routes.py → login_post
     resp = RedirectResponse(url="/admin/dashboard", status_code=status.HTTP_302_FOUND)
@@ -190,6 +198,7 @@ def change_password_post(
 
     # update and save
     user.hashed_password = hash_password(new_password)
+    user.is_temp_password = False   # ✅ Clear the temp password flag
     db.add(user)
     db.commit()
 

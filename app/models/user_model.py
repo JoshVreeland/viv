@@ -11,6 +11,9 @@ class User(Base):
     is_admin        = Column(Boolean, default=False, nullable=False)
     is_superadmin   = Column(Boolean, default=False, nullable=False)
     is_active       = Column(Boolean, default=True, nullable=False)
+    is_temp_password = Column(Boolean, default=False)
+
+
 
     # Relationships
     client_additions = relationship(
