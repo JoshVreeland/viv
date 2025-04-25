@@ -133,7 +133,7 @@ def add_admin_post(
         msg["From"] = os.getenv("EMAIL_FROM")
         msg["To"] = email
 
-        login_link = f"{os.getenv('APP_URL', 'https://viv-yx5f.onrender.com/')}/login"
+        login_link = f"{os.getenv('APP_URL', 'https://viv-yx5f.onrender.com')}/login"
         msg.set_content(f"""
 Hello,
 
