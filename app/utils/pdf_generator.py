@@ -168,3 +168,4 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
 
     return pdf_path, excel_path
 
+# fix path
