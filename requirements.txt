@@ -30,3 +30,4 @@ urllib3==2.4.0
 uvicorn==0.34.2
 XlsxWriter==3.2.3
 jinja2
+python-multipart
