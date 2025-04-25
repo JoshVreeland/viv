@@ -31,3 +31,13 @@ uvicorn==0.34.2
 XlsxWriter==3.2.3
 jinja2
 python-multipart
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+passlib[bcrypt]
+python-multipart
+jinja2
+boto3
+reportlab
+python-dotenv
