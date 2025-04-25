@@ -17,7 +17,7 @@ Base.metadata.create_all(bind=engine)
 
 # Mount static assets
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
-app.mount("/finalized_pdfs", StaticFiles(directory="finalized_pdfs"), name="finalized_pdfs")
+app.mount("/finalized_pdfs", StaticFiles(directory="app/finalized_pdfs"), name="finalized_pdfs")
 
 # Include your routers
 app.include_router(auth_router)    # /login, /register, /logout
