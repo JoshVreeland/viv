@@ -145,7 +145,7 @@ def generate_excel(pdf_path: str,
         excel_path,
         bucket,
         s3_key,
-        ExtraArgs={"ACL": "public-read"}      # <<< make it publicly readable
+        ExtraArgs={"ACL": "public-read"}
     )
 
     # build the permanent URL
