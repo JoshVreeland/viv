@@ -174,9 +174,12 @@ After you log in, please change your password.
 
 @router.get("/change_password", response_class=HTMLResponse)
 def change_password_get(request: Request):
-    return templates.TemplateResponse("change_password.html", {"request": request})
+    return templates.TemplateResponse(
+        "change_password.html",
+        {"request": request}
+    )
 
-@router.post("/change-password")
+@router.post("/change_password")
 def change_password_post(
     request: Request,
     old_password: str = Form(...),
@@ -217,4 +220,3 @@ def change_password_post(
         path="/"
     )
     return resp
-
