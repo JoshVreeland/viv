@@ -11,7 +11,7 @@ from typing import List, Optional
 from uuid import uuid4
 from datetime import datetime
 import os
-
+from app.utils.s3_helper import upload_to_s3
 from app.database import get_db
 from app.dependencies import require_admin
 from app.models.user_model import User     
@@ -47,7 +47,7 @@ async def contents_estimate_post(
     )
 
 
-@router.post("/finalize", response_class=FileResponse)
+@router.post("/finalize")
 async def finalize_form(
     claimant: str = Form(...),
     property_name: str = Form(..., alias="property"),
@@ -91,36 +91,26 @@ async def finalize_form(
     # 3) Define logo path
     logo_path = os.path.abspath("app/static/logo2.jpg")
 
-    # 4) Generate PDF (unwrap tuple if necessary)
-    pdf_result = generate_pdf(
+
+    pdf_url, excel_url = generate_pdf(
         logo_path=logo_path,
         client_name=client_name,
         claim_text=claim_text,
         estimate_data=estimate_data
     )
-    pdf_path = pdf_result[0] if isinstance(pdf_result, (tuple, list)) else pdf_result
 
-    # 5) Generate Excel
-    excel_path = generate_excel(
-        pdf_path=pdf_path,
-        logo_path=logo_path,
-        claim_text=claim_text,
-        estimate_data=estimate_data,
-        client_name=client_name
-    )
-
-    # 6) Save file record (now with an id)
+    # Persist permanent URLs
     record = FileRecord(
-        id=str(uuid4()),          # ← generate a new UUID here
+        id=str(uuid4()),
         client_name=client_name,
-        file_path=pdf_path,     # ← now non-null
-        pdf_path=pdf_path,
-        excel_path=excel_path,
+        file_path=pdf_url,
+        pdf_path=pdf_url,
+        excel_path=excel_url,
         uploaded_by=user.id
     )
     db.add(record)
 
-    # 7) Track client addition
+    # 6) Track client addition
     track = ClientAddition(
         id=str(uuid4()),
         admin_id=user.id,
@@ -131,12 +121,9 @@ async def finalize_form(
 
     db.commit()
 
-    # 8) Return the PDF
-    return FileResponse(
-        path=pdf_path,
-        filename=os.path.basename(pdf_path),
-        media_type="application/pdf"
-    )
+    # 7) Redirect to your download endpoint for the freshly-uploaded PDF
+    return RedirectResponse(pdf_url, status_code=status.HTTP_303_SEE_OTHER)
+
 
 
 
@@ -235,5 +222,4 @@ def add_client(
         url="/admin/dashboard",
         status_code=status.HTTP_303_SEE_OTHER
     )
-
 

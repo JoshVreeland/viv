@@ -155,12 +155,18 @@
             {{ file.client_name }}
           </span><br>
           <div style="display: inline-flex; gap: 2rem; align-items: center;">
-            <a href="/finalized_pdfs/{{ file.excel_path.split('/')[-1] }}"
-               style="color: #1F1F1F; text-decoration: none;">
+            <a
+              href="/download/{{ file.excel_path }}"
+              style="color: #1F1F1F; text-decoration: none;"
+              target="_blank"
+            >
               Download Excel
             </a>
-            <a href="/finalized_pdfs/{{ file.pdf_path.split('/')[-1] }}"
-               style="color: #1F1F1F; text-decoration: none;">
+            <a
+              href="/download/{{ file.pdf_path }}"
+              style="color: #1F1F1F; text-decoration: none;"
+              target="_blank"
+            >
               Download PDF
             </a>
           </div>
@@ -186,5 +192,4 @@
 
 </body>
 </html>
-
 

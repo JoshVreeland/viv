@@ -1,5 +1,6 @@
 import os
 import xlsxwriter
+import boto3
 
 def generate_excel(pdf_path: str,
                    logo_path: str,
@@ -128,7 +129,27 @@ def generate_excel(pdf_path: str,
         ws2.write(r, 3, row.get('total', 0.0), currency_fmt)
 
     wb.close()
-    return excel_path
 
 
+    # === UPLOAD TO S3 (public) ===
+    s3 = boto3.client(
+        "s3",
+        region_name=os.getenv("S3_REGION"),
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    )
+    filename = os.path.basename(excel_path)
+    s3_key   = f"finalized/{filename}"
+    bucket   = os.getenv("S3_BUCKET_NAME")
+    s3.upload_file(
+        excel_path,
+        bucket,
+        s3_key,
+        ExtraArgs={"ACL": "public-read"}      # <<< make it publicly readable
+    )
 
+    # build the permanent URL
+    region = os.getenv("S3_REGION")
+    public_url = f"https://{bucket}.s3.{region}.amazonaws.com/{s3_key}"
+
+    return public_url

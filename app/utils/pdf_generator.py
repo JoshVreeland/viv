@@ -1,3 +1,4 @@
+import os
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import LETTER
 from reportlab.lib.units import inch
@@ -6,7 +7,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.platypus import Paragraph
 import xml.sax.saxutils as saxutils
-import os
+import boto3
 
 from .excel_generator import generate_excel  # relative import
 
@@ -35,7 +36,7 @@ just_style = ParagraphStyle(
 
 def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     # ensure output directory
-    out_dir = "finalized_pdfs"
+    out_dir = "app/finalized_pdfs"
     os.makedirs(out_dir, exist_ok=True)
     # consistently name the PDF path
     pdf_path = os.path.join(
@@ -157,8 +158,28 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
 
     c.save()
 
-    # Generate Excel beside the PDF
-    excel_path = generate_excel(
+
+    # === UPLOAD PDF TO S3 (public) ===
+    s3 = boto3.client(
+        "s3",
+        region_name=os.getenv("S3_REGION"),
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+    )
+    pdf_filename = os.path.basename(pdf_path)
+    pdf_s3_key   = f"finalized/{pdf_filename}"
+    bucket       = os.getenv("S3_BUCKET_NAME")
+    s3.upload_file(
+        pdf_path,
+        bucket,
+        pdf_s3_key,
+        ExtraArgs={"ACL": "public-read"}
+    )
+    region = os.getenv("S3_REGION")
+    pdf_url = f"https://{bucket}.s3.{region}.amazonaws.com/{pdf_s3_key}"
+
+    # Generate and upload Excel → returns its public URL
+    excel_url = generate_excel(
         pdf_path,
         logo_path=logo_path,
         claim_text=claim_text,
@@ -166,6 +187,4 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         client_name=client_name
     )
 
-    return pdf_path, excel_path
-
-# fix path
+    return pdf_url, excel_url
