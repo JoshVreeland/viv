@@ -76,7 +76,7 @@ def login_post(
 
     # 4) Redirect based on temp-password flag
     if user.is_temp_password:
-        redirect_url = "/change-password"
+        redirect_url = "/change_password"
     else:
         redirect_url = "/admin/dashboard"
 
