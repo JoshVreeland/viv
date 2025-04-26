@@ -16,10 +16,11 @@ from fastapi import BackgroundTasks
 from app.dependencies import require_admin
 import os
 import smtplib
+from passlib.context import CryptContext
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
-
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(user: UserCreate, db: Session = Depends(get_db)):
@@ -50,41 +51,42 @@ def login_get(request: Request):
 @router.post("/login", response_class=HTMLResponse)
 def login_post(
     request: Request,
-    response: Response,
     email: str = Form(...),
     password: str = Form(...),
     db: Session = Depends(get_db)
 ):
+    # 1) Fetch user
     user = db.query(User).filter(User.email == email).first()
+
+    # 2) Verify credentials
     if not user or not verify_password(password, user.hashed_password):
-        # bad creds
         return templates.TemplateResponse(
             "login.html",
             {"request": request, "error": "Invalid email or password"},
             status_code=status.HTTP_401_UNAUTHORIZED
         )
 
+    # 3) Check authorization
     if not (user.is_admin or user.is_superadmin):
-        # not allowed
         return templates.TemplateResponse(
             "login.html",
             {"request": request, "error": "Not authorized"},
             status_code=status.HTTP_403_FORBIDDEN
         )
 
+    # 4) Redirect based on temp-password flag
     if user.is_temp_password:
-        resp = RedirectResponse(url="/change-password", status_code=status.HTTP_302_FOUND)
+        redirect_url = "/change-password"
     else:
-        resp = RedirectResponse(url="/admin/dashboard", status_code=status.HTTP_302_FOUND)
+        redirect_url = "/admin/dashboard"
 
-
-    # in app/routes/auth_routes.py → login_post
-    resp = RedirectResponse(url="/admin/dashboard", status_code=status.HTTP_302_FOUND)
+    # 5) Build response and set session cookie
+    resp = RedirectResponse(url=redirect_url, status_code=status.HTTP_302_FOUND)
     resp.set_cookie(
         key="user_id",
         value=str(user.id),
         httponly=True,
-        path="/"                # ← make this explicit
+        path="/"
     )
     return resp
 
@@ -169,11 +171,11 @@ After you log in, please change your password.
     background_tasks.add_task(send_invite_email)
     return RedirectResponse("/admin/dashboard", status_code=status.HTTP_302_FOUND)
 
-@router.get("/change-password", response_class=HTMLResponse)
+@router.get("/change_password", response_class=HTMLResponse)
 def change_password_get(request: Request):
     return templates.TemplateResponse("change_password.html", {"request": request})
 
-@router.post("/change-password", response_class=HTMLResponse)
+@router.post("/change_password", response_class=HTMLResponse)
 def change_password_post(
     request: Request,
     old_password: str = Form(...),
