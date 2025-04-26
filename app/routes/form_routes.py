@@ -11,7 +11,6 @@ from typing import List, Optional
 from uuid import uuid4
 from datetime import datetime
 import os
-from app.utils.s3_helper import upload_to_s3
 from app.database import get_db
 from app.dependencies import require_admin
 from app.models.user_model import User     
