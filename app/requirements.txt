@@ -66,3 +66,6 @@ bcrypt
 boto3
 xlsxwriter
 reportlab
+bcrypt>=4.0.0
+passlib[bcrypt]>=1.7.0
+
