@@ -176,7 +176,7 @@ After you log in, please change your password.
 def change_password_get(request: Request):
     return templates.TemplateResponse("change_password.html", {"request": request})
 
-@router.post("/change_password", response_class=HTMLResponse)
+@router.post("/change-password")
 def change_password_post(
     request: Request,
     old_password: str = Form(...),
@@ -185,13 +185,14 @@ def change_password_post(
     db: Session = Depends(get_db),
     user: User = Depends(require_admin)
 ):
-    # verify current password
+    # 1) Verify current password
     if not verify_password(old_password, user.hashed_password):
         return templates.TemplateResponse(
             "change_password.html",
             {"request": request, "error": "Current password is incorrect."},
             status_code=status.HTTP_400_BAD_REQUEST
         )
+    # 2) Verify new passwords match
     if new_password != confirm_password:
         return templates.TemplateResponse(
             "change_password.html",
@@ -199,10 +200,21 @@ def change_password_post(
             status_code=status.HTTP_400_BAD_REQUEST
         )
 
-    # update and save
+    # 3) Update password & clear temp flag
     user.hashed_password = hash_password(new_password)
-    user.is_temp_password = False   # ✅ Clear the temp password flag
-    db.add(user)
+    user.is_temp_password = False
     db.commit()
 
-    return RedirectResponse("/admin/dashboard", status_code=status.HTTP_302_FOUND)
+    # 4) Redirect to dashboard, resetting the session cookie
+    resp = RedirectResponse(
+        url="/admin/dashboard",
+        status_code=status.HTTP_302_FOUND
+    )
+    resp.set_cookie(
+        key="user_id",
+        value=str(user.id),
+        httponly=True,
+        path="/"
+    )
+    return resp
+
