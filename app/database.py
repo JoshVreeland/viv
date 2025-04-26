@@ -3,15 +3,19 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# SQLite URL; change to your Postgres/MySQL URL if you want
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./vivclaims.db")
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL environment variable not set")
 
-# For sqlite only: allow multithreaded access
+
+# Only set this for SQLite; on Postgres, leave it empty
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+
 
 engine = create_engine(DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+
 
 
 def get_db():
@@ -21,7 +25,4 @@ def get_db():
         yield db
     finally:
         db.close()
-
-
-
 
