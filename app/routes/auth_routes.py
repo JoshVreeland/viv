@@ -131,6 +131,7 @@ def add_admin_post(
         email=email,
         hashed_password=hash_password(temp_pw),
         is_admin=True,
+        is_temp_password=True       # ← ensure this is set
         is_superadmin=False
     )
     db.add(new_user)
