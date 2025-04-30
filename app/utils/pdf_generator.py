@@ -100,7 +100,7 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     start_contents_page(include_title=True)
             
     # Metadata
-    y = height - 3.0*inch
+    y = height - 2.5*inch
     for label in ["claimant","property","estimator","estimate_type","date_entered","date_completed"]:
         label_text = f"{label.replace('_',' ').title()}: "
         val        = estimate_data.get(label, "")
@@ -121,14 +121,14 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     # Initial table headers
     y = draw_table_headers(y)
     
-    # Layout constants
-    cat_x       = inch
-    cat_w       = 2*inch
-    desc_x      = cat_x + cat_w + 0.2*inch
-    desc_w      = 2*inch
-    just_x      = desc_x + desc_w + 0.2*inch
-    total_x     = 7.4*inch
-    just_w      = (total_x - 1.0*inch) - just_x
+    # Layout constants (aligned with headers)
+    cat_x        = inch
+    cat_w        = 2.3 * inch
+    desc_x       = cat_x + cat_w
+    desc_w       = 2.3 * inch
+    just_x       = desc_x + desc_w
+    just_w       = 1.5 * inch
+    total_x      = 7.1 * inch
     bottom_margin= inch
     
     # Rows
