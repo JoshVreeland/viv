@@ -123,12 +123,13 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     
     # Layout constants (aligned with headers)
     cat_x        = inch
-    cat_w        = 2.3 * inch
+    cat_w        = 1.5 * inch
     desc_x       = cat_x + cat_w
     desc_w       = 2.3 * inch
     just_x       = desc_x + desc_w
     just_w       = 2.3 * inch
-    total_x      = just_x + just_w + 0.2 * inch
+    total_x      = inch
+    total_w	 = inch
     bottom_margin= inch
     
     # Rows
