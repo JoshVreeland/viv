@@ -54,24 +54,28 @@ async def finalize_form(
     estimate_type: str = Form(...),
     date_entered: str = Form(...),
     date_completed: str = Form(...),
-    category: Optional[List[str]] = Form([]),
-    justification: Optional[List[str]] = Form([]),
-    total: Optional[List[str]] = Form([]),
-    client_name: str = Form(...),
-    claim_text: str = Form(...),
-    db: Session = Depends(get_db),
-    user: User = Depends(require_admin)
+    category: Optional[List[str]]        = Form([]),
+    description: Optional[List[str]]     = Form([]),   # ← new
+    justification: Optional[List[str]]   = Form([]),
+    total: Optional[List[str]]           = Form([]),
+    client_name: str                     = Form(...),
+    claim_text: str                      = Form(...),
+    db: Session                         = Depends(get_db), 
+    user: User                          = Depends(require_admin)
 ):
     # 1) Build the table rows
     rows = []
-    for cat, just, tot in zip(category, justification, total):
+    for cat, desc, just, tot in zip(category, description, justification, total):
         try:
             amt = float(tot.strip()) if tot and tot.strip() else 0.0
         except ValueError:
             amt = 0.0
-        if cat.strip() or just.strip() or amt > 0:
+
+        # include row if any field has data
+        if cat.strip() or desc.strip() or just.strip() or amt > 0:
             rows.append({
                 "category": cat.strip(),
+                "description": desc.strip(),       # ← new
                 "justification": just.strip(),
                 "total": amt
             })
@@ -90,20 +94,20 @@ async def finalize_form(
     # 3) Define logo path
     logo_path = os.path.abspath("app/static/logo2.jpg")
 
-
+    # 4) Generate & upload PDF + Excel → returns S3 keys or local URLs
     pdf_url, excel_url = generate_pdf(
         logo_path=logo_path,
-        client_name=client_name,
-        claim_text=claim_text,
+        client_name=client_name, 
+        claim_text=claim_text,  
         estimate_data=estimate_data
     )
 
-    # Persist permanent URLs
+    # 5) Persist permanent URLs 
     record = FileRecord(
         id=str(uuid4()),
         client_name=client_name,
         file_path=pdf_url,
-        pdf_path=pdf_url,
+        pdf_path=pdf_url, 
         excel_path=excel_url,
         uploaded_by=user.id
     )

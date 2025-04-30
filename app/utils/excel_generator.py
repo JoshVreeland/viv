@@ -80,7 +80,7 @@ def generate_excel(pdf_path: str,
     ws1.merge_range('A1:H15', '', border_fmt)
     ws1.insert_image('A1', logo_path, {'x_scale': 0.39, 'y_scale': 0.36})
     ws1.merge_range('A16:H40', claim_text, border_fmt)
-
+    
     # === SHEET 2: Contents Estimate ===
     ws2 = wb.add_worksheet("Contents Estimate")
     for row in range(100):
@@ -97,7 +97,7 @@ def generate_excel(pdf_path: str,
         ws2.write(24, col, '', dark_fmt)
     ws2.merge_range('A1:D15', '', border_fmt)
     ws2.insert_image('A1', logo_path, {'x_scale': 0.39, 'y_scale': 0.36})
-
+        
     labels = [
         "Claimant", "Property", "Estimator",
         "Estimate Type", "Date Entered", "Date Completed"
@@ -108,7 +108,7 @@ def generate_excel(pdf_path: str,
         val = estimate_data.get(key, "")
         ws2.merge_range(r, 0, r, 1, label, yellow_bold_fmt)
         ws2.merge_range(r, 2, r, 3, val, yellow_bold_fmt)
-
+        
     ws2.set_row(23, 49)
     total = sum(row.get("total", 0.0) for row in estimate_data.get("rows", []))
     ws2.merge_range(
@@ -116,21 +116,24 @@ def generate_excel(pdf_path: str,
         f"Total Replacement Cost Value: ${total:,.2f}",
         grey_bold_fmt
     )
-
+    
+    # Updated headers for Description and Justification
     ws2.write(25, 0, 'Category', yellow_bold_fmt)
-    ws2.merge_range(25, 1, 25, 2, 'Defensible Justification', yellow_bold_fmt)
+    ws2.write(25, 1, 'Description', yellow_bold_fmt)
+    ws2.write(25, 2, 'Justification', yellow_bold_fmt)
     ws2.write(25, 3, 'Total', yellow_bold_fmt)
-
+        
     start_row = 26
     for i, row in enumerate(estimate_data.get('rows', [])):
         r = start_row + i
         ws2.write(r, 0, row.get('category', ""), border_fmt)
-        ws2.merge_range(r, 1, r, 2, row.get('justification', ""), border_fmt)
+        ws2.write(r, 1, row.get('description', ""), border_fmt)    # ← new
+        ws2.write(r, 2, row.get('justification', ""), border_fmt)
         ws2.write(r, 3, row.get('total', 0.0), currency_fmt)
-
+    
     wb.close()
-
-
+        
+    
     # === UPLOAD TO S3 (public) ===
     s3 = boto3.client(
         "s3",
@@ -147,9 +150,9 @@ def generate_excel(pdf_path: str,
         s3_key,
         ExtraArgs={"ACL": "public-read"}
     )
-
+    
     # build the permanent URL
     region = os.getenv("S3_REGION")
     public_url = f"https://{bucket}.s3.{region}.amazonaws.com/{s3_key}"
-
+     
     return public_url

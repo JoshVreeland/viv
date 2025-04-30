@@ -49,6 +49,7 @@
             <thead>
                 <tr>
                     <th style="border: 1px solid #ccc; background-color: #eee; text-align: left; padding: 8px;">Category</th>
+                    <th style="border: 1px solid #ccc; background-color: #eee; text-align: left; padding: 8px;">Description</th>
                     <th style="border: 1px solid #ccc; background-color: #eee; text-align: left; padding: 8px;">Justification</th>
                     <th style="border: 1px solid #ccc; background-color: #eee; text-align: left; padding: 8px;">Total</th>
                 </tr>
@@ -57,6 +58,14 @@
                 <tr>
                     <td style="border: 1px solid #ccc; padding: 8px;">
                         <input type="text" name="category" required style="width: 100%; padding: 4px;" placeholder="Category">
+                    </td>
+                    <td style="border: 1px solid #ccc; padding: 8px; vertical-align: top;">
+                        <textarea
+                            name="description"
+                            rows="3"
+                            placeholder="Description"
+                            style="width: 100%; padding: 4px; resize: vertical; white-space: pre-wrap; overflow-wrap: break-word;"
+                        ></textarea>
                     </td>
                     <td style="border: 1px solid #ccc; padding: 8px; vertical-align: top;">
                         <textarea
@@ -99,9 +108,10 @@
         const rows    = tableBody.querySelectorAll("tr");
         const lastRow = rows[rows.length - 1];
         const catIn   = lastRow.querySelector('input[name="category"]');
+        const descIn  = lastRow.querySelector('textarea[name="description"]');
         const justIn  = lastRow.querySelector('textarea[name="justification"]');
         const totalIn = lastRow.querySelector('input[name="total"]');
-        const hasValue = [catIn, justIn, totalIn].some(el => el.value.trim() !== "");
+        const hasValue = [catIn, descIn, justIn, totalIn].some(el => el.value.trim() !== "");
         if (hasValue) {
           const newRow = templateRow.cloneNode(true);
           newRow.querySelectorAll("input, textarea").forEach(el => {
@@ -118,10 +128,11 @@
         addRowIfNeeded();
       });
 
-      // Tab → insert real tab; Ctrl+B → insert bullet in justification textarea
+      // Tab → insert real tab; Ctrl+B → insert bullet in justification/description textarea
       document.addEventListener("keydown", function(e) {
         const t = e.target;
-        if (t.tagName === "TEXTAREA" && t.name === "justification") {
+        if (t.tagName === "TEXTAREA" && 
+            (t.name === "justification" || t.name === "description")) {
           if (e.key === "Tab") {
             e.preventDefault();
             const s = t.selectionStart;
@@ -141,6 +152,5 @@
 
 </body>
 </html>
-
 
 
