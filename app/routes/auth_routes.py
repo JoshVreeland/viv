@@ -6,7 +6,7 @@ from fastapi import (
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-
+from fastapi import Cookie, HTTPException
 from app.database import get_db
 from app.models.user_model import User
 from app.schemas.user_schema import UserCreate
@@ -21,6 +21,17 @@ from passlib.context import CryptContext
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def get_current_user(
+    user_id: str = Cookie(None),
+    db: Session = Depends(get_db)
+) -> User:
+    if not user_id:
+        raise HTTPException(401, "Not authenticated")
+    user = db.query(User).get(user_id)
+    if not user:
+        raise HTTPException(401, "User not found")
+    return user
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(user: UserCreate, db: Session = Depends(get_db)):
@@ -186,16 +197,16 @@ def change_password_post(
     new_password: str = Form(...),
     confirm_password: str = Form(...),
     db: Session = Depends(get_db),
-    user: User = Depends(require_admin)
+    user: User = Depends(get_current_user)     # ← use the new dependency
 ):
-    # 1) Verify current password
+    # 1) Verify their *current* password
     if not verify_password(old_password, user.hashed_password):
         return templates.TemplateResponse(
             "change_password.html",
             {"request": request, "error": "Current password is incorrect."},
             status_code=status.HTTP_400_BAD_REQUEST
         )
-    # 2) Verify new passwords match
+    # 2) Confirm the two new passwords match
     if new_password != confirm_password:
         return templates.TemplateResponse(
             "change_password.html",
@@ -203,20 +214,16 @@ def change_password_post(
             status_code=status.HTTP_400_BAD_REQUEST
         )
 
-    # 3) Update password & clear temp flag
-    user.hashed_password = hash_password(new_password)
-    user.is_temp_password = False
-    db.commit()
+    # 3) Hash & update
+    user.hashed_password     = hash_password(new_password)
+    user.is_temp_password    = False
+    db.commit()                # ← commit right here
 
-    # 4) Redirect to dashboard, resetting the session cookie
+    # 4) Redirect back to dashboard, preserving cookie
     resp = RedirectResponse(
         url="/admin/dashboard",
         status_code=status.HTTP_302_FOUND
     )
-    resp.set_cookie(
-        key="user_id",
-        value=str(user.id),
-        httponly=True,
-        path="/"
-    )
+    resp.set_cookie("user_id", str(user.id), httponly=True, path="/")
     return resp
+
