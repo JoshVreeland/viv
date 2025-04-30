@@ -100,7 +100,7 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     start_contents_page(include_title=True)
             
     # Metadata
-    y = height - 3.2*inch
+    y = height - 3.0*inch
     for label in ["claimant","property","estimator","estimate_type","date_entered","date_completed"]:
         label_text = f"{label.replace('_',' ').title()}: "
         val        = estimate_data.get(label, "")
@@ -151,25 +151,36 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
             y = draw_table_headers(y)
             avail_h = y - bottom_margin
     
-        # Category
-        cat_para.drawOn(c,  cat_x,   y - h_cat)
-        
-        # Description
+        # Category (centered)
+        w_cat, _ = cat_para.wrap(cat_w, avail_h)
+        cat_para.drawOn(c, cat_x + (cat_w - w_cat) / 2, y - h_cat)
+
+        # Description (centered)
         desc_para = Paragraph(
-            saxutils.escape(row.get("description","—")), just_style
+            saxutils.escape(row.get("description", "—")),
+            just_style
         )
         w_desc, h_desc = desc_para.wrap(desc_w, avail_h)
-        desc_para.drawOn(c, desc_x, y - h_desc)
+        desc_para.drawOn(c, desc_x + (desc_w - w_desc) / 2, y - h_desc)
 
-        # Justification
-        just_para.drawOn(c, just_x,  y - h_just)
-        
-        # Total
-        c.setFont("Helvetica", 10) 
-        c.drawRightString(total_x,
-                          y - (row_h/2) + 4,
-                          f"${row.get('total',0):,.2f}")
-        y -= (row_h + 6)   
+        # Justification (centered)
+        raw_j = row.get("justification", "—")
+        esc_j = saxutils.escape(raw_j).replace('\t','&nbsp;'*4)\
+                                        .replace('\r\n','\n')\
+                                        .replace('\n','<br/>')
+        just_para = Paragraph(esc_j, just_style)
+        w_just, _ = just_para.wrap(just_w, avail_h)
+        just_para.drawOn(c, just_x + (just_w - w_just) / 2, y - h_just)
+
+        # Total (right-aligned)
+        c.setFont("Helvetica", 10)
+        c.drawRightString(
+            total_x,
+            y - (row_h / 2) + 4,
+            f"${row.get('total', 0):,.2f}"
+        )
+
+        y -= (row_h + 6)
     
     c.save()
     
