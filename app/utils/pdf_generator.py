@@ -42,6 +42,7 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
 
     c = canvas.Canvas(pdf_path, pagesize=LETTER)
     width, height = LETTER
+    inch = reportlab.lib.units.inch
 
     # layout constants
     cat_x = inch
@@ -174,10 +175,13 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         w_just, h_just = just_para.wrap(just_w, avail_h)
         just_para.drawOn(c, just_x + (just_w - w_just) / 2, y - h_just)
 
-        # Total
-        total_para = Paragraph(f"${row.get('total', 0):,.2f}", just_style)
-        w_tot, h_tot = total_para.wrap(total_x - just_x, avail_h)
-        total_para.drawOn(c, total_x - w_tot, y - h_tot)
+        # Total (right-aligned 1" from the right edge)
+        c.setFont("Helvetica", 10)
+        c.drawRightString(
+            width - inch,
+            y - (row_h/2) + 4,
+            f"${row.get('total', 0):,.2f}"
+        )
 
         # next row
         y -= (max(h_cat, h_desc, h_just, h_tot) + 6)
