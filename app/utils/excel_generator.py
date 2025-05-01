@@ -1,3 +1,4 @@
+from PIL import Image
 import os
 import xlsxwriter
 import boto3
@@ -68,17 +69,27 @@ def generate_excel(pdf_path: str,
 
     ws2.merge_range('A1:D15', '', header_fmt)
 
-    # 2) Logo at same scale as sheet1
-    # wherever you insert your logo on sheet2:
-    sheet2_logo = os.path.abspath('app/static/logo1.jpg')
+    logo_path = os.path.abspath('app/static/logo1.jpg')
+    with Image.open(logo_path) as img:
+        orig_w, orig_h = img.size  # pixels
+
+    dpi = 96.0
+    target_w_in = 10.5
+    target_h_in = 2.98
+
+    x_scale = (dpi * target_w_in) / orig_w
+    y_scale = (dpi * target_h_in) / orig_h
+
+    # 2) insert it without locking aspect ratio
     ws2.insert_image(
         'A1',
-        sheet2_logo,
+        logo_path,
         {
-            'x_scale': 0.7,
-            'y_scale': 0.49
+            'x_scale': x_scale,
+            'y_scale': y_scale
         }
     )
+
 
     # 3) Metadata rows A2:D7 (Claimant, Property, etc.) on dark background
     labels = ["Claimant", "Property", "Estimator", "Estimate Type", "Date Entered", "Date Completed"]
