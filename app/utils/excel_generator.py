@@ -1,7 +1,6 @@
 import os
 import xlsxwriter
 import boto3
-from openpyxl import load_workbook
 
 
 def generate_excel(pdf_path: str,
@@ -138,26 +137,6 @@ def generate_excel(pdf_path: str,
         ws2.write(r, 3, row.get('total', 0.0),       total_fmt)
 
     wb.close()
-
-    # 2) post-process with openpyxl to unlock aspect ratio on any picture
-    wb2 = load_workbook(excel_path)
-    ws2 = wb2['Contents Estimate']
-    # loop over the drawings and clear lockAspect
-    for rel in ws2._rels.values():
-        target = getattr(rel, '_target', None)
-        # we only care about the spreadsheetDrawing part
-        from openpyxl.drawing.spreadsheet_drawing import SpreadsheetDrawing
-        if isinstance(target, SpreadsheetDrawing):
-            drawing = target
-            for pic in drawing.spTree.findall(
-                './/{http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing}pic'
-            ):
-                xfrm = pic.find(
-                    './/{http://schemas.openxmlformats.org/drawingml/2006/main}xfrm'
-                )
-                if xfrm is not None:
-                    xfrm.set('lockAspect', '0')
-    wb2.save(excel_path)
 
     # === UPLOAD TO S3 (public) ===
     s3 = boto3.client(
