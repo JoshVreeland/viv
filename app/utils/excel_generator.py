@@ -14,55 +14,20 @@ def generate_excel(pdf_path: str,
     # ———————————————————————————————
     out_dir = os.path.dirname(pdf_path)
     os.makedirs(out_dir, exist_ok=True)
+
     safe = client_name.replace(" ", "_")
     excel_path = os.path.join(out_dir, f"{safe}_Claim.xlsx")
 
     wb = xlsxwriter.Workbook(excel_path)
 
     # === COMMON FORMATS ===
-    bg_fmt          = wb.add_format({
-        'font_name': 'Times New Roman',
-        'bg_color': '#FFFDFA',
-        'align': 'center',
-        'valign': 'vcenter',
-        'text_wrap': True,
-        'border': 0
-    })
-    border_fmt      = wb.add_format({
-        'font_name': 'Times New Roman',
-        'bg_color': '#FFFDFA',
-        'align': 'center',
-        'valign': 'vcenter',
-        'text_wrap': True,
-        'border': 1
-    })
-    currency_fmt    = wb.add_format({
-        'font_name': 'Times New Roman',
-        'bg_color': '#FFFDFA',
-        'align': 'center',
-        'valign': 'vcenter',
-        'num_format': '$#,##0.00',
-        'border': 1
-    })
-    yellow_bold_fmt = wb.add_format({
-        'font_name': 'Times New Roman',
-        'bg_color': '#F6E60B',
-        'bold': True,
-        'align': 'center',
-        'valign': 'vcenter',
-        'text_wrap': True,
-        'border': 1
-    })
-    grey_bold_fmt   = wb.add_format({
-        'font_name': 'Times New Roman',
-        'bg_color': '#D4D4C9',
-        'bold': True,
-        'font_size': 14,
-        'align': 'center',
-        'valign': 'vcenter',
-        'text_wrap': True,
-        'border': 1
-    })
+    common_fmt = lambda **kw: wb.add_format({'font_name': 'Times New Roman', **kw})
+    bg_fmt          = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, border=0)
+    border_fmt      = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, border=1)
+    currency_fmt    = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', num_format='$#,##0.00', border=1)
+    yellow_bold_fmt = common_fmt(bg_color='#F6E60B', bold=True, align='center', valign='vcenter', text_wrap=True, border=1)
+    dark_fmt        = common_fmt(bg_color='#3B4232')
+    grey_bold_fmt   = common_fmt(bg_color='#D4D4C9', bold=True, font_size=14, align='center', valign='vcenter', text_wrap=True, border=1)
 
     # === SHEET 1: Claim Package (unchanged) ===
     ws1 = wb.add_worksheet('Claim Package')
@@ -81,99 +46,73 @@ def generate_excel(pdf_path: str,
     ws1.insert_image('A1', logo_path, {'x_scale': 0.39, 'y_scale': 0.36})
     ws1.merge_range('A16:H40', claim_text, border_fmt)
 
-    # === SHEET 2: Contents Estimate (with your specific tweaks) ===
+    # === SHEET 2: Contents Estimate (your specific tweaks) ===
     ws2 = wb.add_worksheet('Contents Estimate')
+    # fill background & hide gridlines
+    for r in range(100):
+        for c in range(100):
+            ws2.write_blank(r, c, None, bg_fmt)
     ws2.hide_gridlines(2)
     ws2.set_tab_color('#FFFDFA')
     ws2.set_column('A:D', 31, bg_fmt)
     for r in range(100):
         ws2.set_row(r, 15)
 
-    # 1) A1:D15 background = #3d4336
-    header_bg = wb.add_format({
-        'font_name': 'Times New Roman',
-        'bg_color': '#3d4336',
-        'align': 'center',
-        'valign': 'vcenter'
-    })
+    # 1) A1:D15 dark background (#3d4336)
+    header_bg = common_fmt(bg_color='#3d4336', font_color='#FFFFFF', align='center', valign='vcenter', border=1)
     for r in range(15):
         for c in range(4):
             ws2.write_blank(r, c, None, header_bg)
 
-    # 2) Logo at same scale as Sheet 1
+    # 2) Logo at same scale as sheet1
     sheet2_logo = os.path.abspath('app/static/logo1.jpg')
-    ws2.insert_image('A1', sheet2_logo, {'x_scale': 0.39, 'y_scale': 0.36})
+    ws2.insert_image('A1', sheet2_logo, {'x_scale': 0.58, 'y_scale': 0.70})
 
-    # 3) Metadata A2:D7 (Claimant, Property, etc.) over dark background
-    meta_label = wb.add_format({
-        'font_name': 'Times New Roman',
-        'bold': True,
-        'font_color': '#FFFFFF',
-        'bg_color': '#3d4336',
-        'align': 'center',
-        'valign': 'vcenter'
-    })
-    meta_val = wb.add_format({
-        'font_name': 'Times New Roman',
-        'font_color': '#FFFFFF',
-        'bg_color': '#3d4336',
-        'align': 'center',
-        'valign': 'vcenter'
-    })
-    labels = [
-        "Claimant", "Property", "Estimator",
-        "Estimate Type", "Date Entered", "Date Completed"
-    ]
+    # 3) Metadata rows A2:D7 (Claimant, Property, etc.) on dark background
+    labels = ["Claimant", "Property", "Estimator", "Estimate Type", "Date Entered", "Date Completed"]
     for idx, label in enumerate(labels):
-        row_idx = 1 + idx  # Excel rows 2–7
-        key = label.lower().replace(" ", "_")
-        val = estimate_data.get(key, "")
-        ws2.merge_range(row_idx, 0, row_idx, 1, label, meta_label)
-        ws2.merge_range(row_idx, 2, row_idx, 3, val,   meta_val)
+        row_idx = 16 + idx         # Excel rows 2–7
+        key     = label.lower().replace(" ", "_")
+        val     = estimate_data.get(key, "")
+        ws2.merge_range(row_idx, 0, row_idx, 1, label, header_bg)
+        ws2.merge_range(row_idx, 2, row_idx, 3, val,   header_bg)
 
-    # 4) Row 16 (Excel) bold, font 14, height 20
-    subtitle_fmt = wb.add_format({
-        'font_name': 'Times New Roman',
-        'bold': True,
-        'font_size': 14,
-        'align': 'center',
-        'valign': 'vcenter',
-        'bg_color': '#3d4336'
-    })
+    # 4) Row 16 (A16:D16) bold, size 14, height 20
+    subtitle_fmt = common_fmt(bold=True, font_size=14, bg_color='#3d4336', font_color='#FFFFFF', align='center', valign='vcenter')
     ws2.merge_range('A16:D16',
                     'Your Valley Isle Valuation L.L.C., Claim Package:',
                     subtitle_fmt)
-    ws2.set_row(15, 20)  # row index 15 → Excel row 16
+    ws2.set_row(15, 20)
 
-    # 5) Header row 25 (unchanged from before)
-    ws2.write(24, 0, 'Category', yellow_bold_fmt)
-    ws2.write(24, 1, 'Description', yellow_bold_fmt)
-    ws2.write(24, 2, 'Justification', yellow_bold_fmt)
-    ws2.write(24, 3, 'Total', yellow_bold_fmt)
+    # 5) A17:D22 yellow background (#f2cc0c)
+    yellow_bg = common_fmt(bg_color='#f2cc0c', align='center', valign='vcenter', border=1)
+    for r in range(16, 22):
+        ws2.set_row(r, None, yellow_bg)
 
-    # 6) Data rows: A–C white background (#F2F2F2), Times New Roman
-    white_bg = wb.add_format({
-        'font_name': 'Times New Roman',
-        'bg_color': '#F2F2F2',
-        'align': 'center',
-        'valign': 'vcenter',
-        'border': 1
-    })
-    total_fmt = wb.add_format({
-        'font_name': 'Times New Roman',
-        'bold': True,
-        'num_format': '$#,##0.00',
-        'align': 'center',
-        'valign': 'vcenter',
-        'border': 1
-    })
-    start_row = 25
+    # 6) A24:D24 white darker 5% (#F2F2F2)
+    white_bg5 = common_fmt(bg_color='#F2F2F2', align='center', valign='vcenter', border=1)
+    total_val = sum(row.get('total', 0.0) for row in estimate_data.get('rows', []))
+    ws2.merge_range('A24:D24',
+                    f"Total Replacement Cost Value: ${total_val:,.2f}",
+                    white_bg5)
+    ws2.set_row(23, None)
+
+    # 7) Row 25 headers (A25:D25) dark background with white bold text
+    header2 = common_fmt(bg_color='#3d4336', font_color='#FFFFFF', bold=True, align='center', valign='vcenter', border=1)
+    ws2.set_row(24, 20, header2)
+    for col, h in enumerate(['Category', 'Description', 'Justification', 'Total']):
+        ws2.write(24, col, h, header2)
+
+    # 8) Data rows start at row 26 (index 25)
+    cell_fmt    = common_fmt(bg_color='#F2F2F2', align='center', valign='vcenter', border=1)
+    desc_fmt    = common_fmt(bg_color='#F2F2F2', italic=True, align='center', valign='vcenter', border=1)
+    total_fmt   = common_fmt(bg_color='#f2cc0c', bold=True, num_format='$#,##0.00', align='center', valign='vcenter', border=1)
     for i, row in enumerate(estimate_data.get('rows', [])):
-        r = start_row + i
-        ws2.write(r, 0, row.get('category', ''), white_bg)
-        ws2.write(r, 1, row.get('description', ''), white_bg)
-        ws2.write(r, 2, row.get('justification', ''), white_bg)
-        ws2.write(r, 3, row.get('total', 0.0), total_fmt)
+        r = 25 + i
+        ws2.write(r, 0, row.get('category', ''),    cell_fmt)
+        ws2.write(r, 1, row.get('description', ''),  desc_fmt)
+        ws2.write(r, 2, row.get('justification', ''),cell_fmt)
+        ws2.write(r, 3, row.get('total', 0.0),       total_fmt)
 
     wb.close()
 
