@@ -69,18 +69,22 @@ def generate_excel(pdf_path: str,
 
     ws2.merge_range('A1:D15', '', header_fmt)
 
+    # 1. Path to your logo
     logo_path = os.path.abspath('app/static/logo1.jpg')
+
+    # 2. Open to get its native dimensions
     with Image.open(logo_path) as img:
-        orig_w, orig_h = img.size  # pixels
+        orig_w_px, orig_h_px = img.size
 
-    dpi = 96.0
-    target_w_in = 10.5
-    target_h_in = 2.98
+    # 3. Your desired pixel dimensions
+    target_w_px = 1009.92
+    target_h_px = 261.12
 
-    x_scale = (dpi * target_w_in) / orig_w
-    y_scale = (dpi * target_h_in) / orig_h
+    # 4. Compute the scale factors
+    x_scale = target_w_px / orig_w_px
+    y_scale = target_h_px / orig_h_px
 
-    # 2) insert it without locking aspect ratio
+    # 5. Insert the image with those exact scales
     ws2.insert_image(
         'A1',
         logo_path,
@@ -89,7 +93,6 @@ def generate_excel(pdf_path: str,
             'y_scale': y_scale
         }
     )
-
 
     # 3) Metadata rows A2:D7 (Claimant, Property, etc.) on dark background
     labels = ["Claimant", "Property", "Estimator", "Estimate Type", "Date Entered", "Date Completed"]
