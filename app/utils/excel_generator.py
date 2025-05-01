@@ -25,7 +25,7 @@ def generate_excel(pdf_path: str,
     bg_fmt          = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, border=0)
     border_fmt      = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, border=1)
     currency_fmt    = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', num_format='$#,##0.00', border=1)
-    yellow_bold_fmt = common_fmt(bg_color='#F6E60B', bold=True, align='center', valign='vcenter', text_wrap=True, border=1)
+    yellow_bold_fmt = common_fmt(bg_color='#F2CC0C', bold=True, align='center', valign='vcenter', text_wrap=True, border=1)
     dark_fmt        = common_fmt(bg_color='#3B4232')
     grey_bold_fmt   = common_fmt(bg_color='#D4D4C9', bold=True, font_size=14, align='center', valign='vcenter', text_wrap=True, border=1)
     header_fmt      = common_fmt(bg_color='#3d4336', font_color='#FFFFFF', align='center', valign='vcenter', border=1)
@@ -74,8 +74,8 @@ def generate_excel(pdf_path: str,
         'A1',
         sheet2_logo,
         {
-            'x_scale': 0.55,
-            'y_scale': 0.7
+            'x_scale': 0.7,
+            'y_scale': 0.55
         }
     )
 
@@ -99,6 +99,8 @@ def generate_excel(pdf_path: str,
     yellow_bg = common_fmt(bg_color='#f2cc0c', align='center', valign='vcenter', border=1)
     for r in range(16, 22):
         ws2.set_row(r, None, yellow_bg)
+
+    ws2.merge_range('A23:D23', '', header_bg)
 
     # 6) A24:D24 white darker 5% (#F2F2F2)
     # make your white_bg5 format bold with 14-pt font:
