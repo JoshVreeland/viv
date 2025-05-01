@@ -128,8 +128,8 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     desc_w       = 2.3 * inch
     just_x       = desc_x + desc_w
     just_w       = 2.3 * inch
-    total_x      = inch
-    total_w	 = inch
+    total_x	 = width - inch
+    total_w	 = 7.5 * inch
     bottom_margin= inch
     
     # Rows
@@ -175,11 +175,11 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
 
         # Total (right-aligned)
         c.setFont("Helvetica", 10)
-        c.drawRightString(
-            total_x,
-            y - (row_h / 2) + 4,
-            f"${row.get('total', 0):,.2f}"
-        )
+	c.drawRightString(
+	    total_x,
+	    y - h_just,   # same vertical offset you use for just_para
+	    f"${row.get('total',0):,.2f}"
+	)
 
         y -= (row_h + 6)
     
