@@ -5,6 +5,7 @@ from reportlab.lib.units import inch
 from reportlab.lib.utils import ImageReader
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
+from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph
 import xml.sax.saxutils as saxutils
 import boto3
@@ -178,13 +179,13 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         # Total (right-aligned 1" from the right edge)
         c.setFont("Helvetica", 10)
         c.drawRightString(
-            width - inch,
-            y - (row_h/2) + 4,
+            width - inch,            # one inch from the right
+            y - (row_h / 2) + 4,     # vertically centered in the row
             f"${row.get('total', 0):,.2f}"
         )
 
         # next row
-        y -= (max(h_cat, h_desc, h_just, h_tot) + 6)
+        y -= (row_h + 6)
 
     c.save()
 
