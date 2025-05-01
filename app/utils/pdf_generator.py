@@ -156,10 +156,13 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         w_just, h_just = just_para.wrap(just_w, avail_h)
         just_para.drawOn(c, just_x + (just_w - w_just) / 2, y - h_just)
 
-        # Total cell
-        total_para = Paragraph(f"${row.get('total', 0):,.2f}", just_style)
-        w_tot, h_tot = total_para.wrap(0.8 * inch, avail_h)
-        total_para.drawOn(c, total_x - w_tot, y - h_tot)
+	# Total cell  
+	total_para = Paragraph(f"${row.get('total', 0):,.2f}", just_style)
+	# give it the actual width of your Total column
+	total_cell_width = total_x - just_x
+	w_tot, h_tot = total_para.wrap(total_cell_width, avail_h)
+	# right-align its right edge at total_x
+	total_para.drawOn(c, total_x - w_tot, y - h_tot)
 
         # next row
         y -= (max(h_cat, h_just, h_desc, h_tot) + 6)

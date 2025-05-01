@@ -2,6 +2,9 @@ import os
 import xlsxwriter
 import boto3
 
+# path to Contents Estimate logo
+SHEET2_LOGO_PATH = 'app/static/logo1.jpg'  # new logo for sheet 2
+
 def generate_excel(pdf_path: str,
                    logo_path: str,
                    claim_text: str,
@@ -12,16 +15,16 @@ def generate_excel(pdf_path: str,
     if isinstance(pdf_path, (tuple, list)):
         pdf_path = pdf_path[0]
     # ———————————————————————————————
-
+        
     out_dir = os.path.dirname(pdf_path)
     os.makedirs(out_dir, exist_ok=True)
-
+        
     safe = client_name.replace(" ", "_")
     excel_path = os.path.join(out_dir, f"{safe}_Claim.xlsx")
-
+    
     wb = xlsxwriter.Workbook(excel_path)
-
-    # === FORMATS ===
+        
+    # === FORMATS ===   
     bg_fmt = wb.add_format({
         'bg_color': '#FFFDFA',
         'align': 'center',
@@ -43,9 +46,9 @@ def generate_excel(pdf_path: str,
         'num_format': '$#,##0.00',
         'border': 1
     })
-
+    
     dark_fmt = wb.add_format({'bg_color': '#3B4232'})
-    yellow_bold_fmt = wb.add_format({
+    yellow_bold_fmt = wb.add_format({   
         'bg_color': '#F6E60B',
         'bold': True,
         'align': 'center',
@@ -53,7 +56,7 @@ def generate_excel(pdf_path: str,
         'text_wrap': True,
         'border': 1
     })
-
+    
     grey_bold_fmt = wb.add_format({
         'bg_color': '#D4D4C9',
         'bold': True,
@@ -63,7 +66,7 @@ def generate_excel(pdf_path: str,
         'text_wrap': True,
         'border': 1
     })
-
+        
     # === SHEET 1: Claim Package ===
     ws1 = wb.add_worksheet('Claim Package')
     for row in range(100):
@@ -82,21 +85,22 @@ def generate_excel(pdf_path: str,
     ws1.merge_range('A16:H40', claim_text, border_fmt)
     
     # === SHEET 2: Contents Estimate ===
-    ws2 = wb.add_worksheet("Contents Estimate")
+    ws2 = wb.add_worksheet("Contents Estimate")  
     for row in range(100):
         for col in range(100):
             ws2.write_blank(row, col, None, bg_fmt)
     ws2.hide_gridlines(2)
     ws2.set_tab_color('#FFFDFA')
     ws2.set_column('A:D', 31, bg_fmt)
-    for r in range(100):
+    for r in range(100): 
         ws2.set_row(r, 15)
     for col in range(4):
         ws2.write(15, col, '', dark_fmt)
         ws2.write(22, col, '', dark_fmt)
         ws2.write(24, col, '', dark_fmt)
     ws2.merge_range('A1:D15', '', border_fmt)
-    ws2.insert_image('A1', logo_path, {'x_scale': 0.39, 'y_scale': 0.36})
+    # use new logo only on sheet 2
+    ws2.insert_image('A1', SHEET2_LOGO_PATH, {'x_scale': 0.39, 'y_scale': 0.36})
         
     labels = [
         "Claimant", "Property", "Estimator",
@@ -108,7 +112,7 @@ def generate_excel(pdf_path: str,
         val = estimate_data.get(key, "")
         ws2.merge_range(r, 0, r, 1, label, yellow_bold_fmt)
         ws2.merge_range(r, 2, r, 3, val, yellow_bold_fmt)
-        
+    
     ws2.set_row(23, 49)
     total = sum(row.get("total", 0.0) for row in estimate_data.get("rows", []))
     ws2.merge_range(
@@ -122,7 +126,7 @@ def generate_excel(pdf_path: str,
     ws2.write(25, 1, 'Description', yellow_bold_fmt)
     ws2.write(25, 2, 'Justification', yellow_bold_fmt)
     ws2.write(25, 3, 'Total', yellow_bold_fmt)
-        
+    
     start_row = 26
     for i, row in enumerate(estimate_data.get('rows', [])):
         r = start_row + i
@@ -130,9 +134,8 @@ def generate_excel(pdf_path: str,
         ws2.write(r, 1, row.get('description', ""), border_fmt)    # ← new
         ws2.write(r, 2, row.get('justification', ""), border_fmt)
         ws2.write(r, 3, row.get('total', 0.0), currency_fmt)
-    
-    wb.close()
         
+    wb.close()
     
     # === UPLOAD TO S3 (public) ===
     s3 = boto3.client(
@@ -150,9 +153,10 @@ def generate_excel(pdf_path: str,
         s3_key,
         ExtraArgs={"ACL": "public-read"}
     )
-    
+        
     # build the permanent URL
     region = os.getenv("S3_REGION")
     public_url = f"https://{bucket}.s3.{region}.amazonaws.com/{s3_key}"
-     
+    
     return public_url
+
