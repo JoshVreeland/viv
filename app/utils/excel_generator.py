@@ -69,22 +69,20 @@ def generate_excel(pdf_path: str,
 
     ws2.merge_range('A1:D15', '', header_fmt)
 
-    # 1. Path to your logo
-    logo_path = os.path.abspath('app/static/logo1.jpg')
+    # 1) calculate target cell block in pixels
+    cell_w_px = 4 * (31 * 7)
+    cell_h_px = 15 * (15 * 1.333)
 
-    # 2. Open to get its native dimensions
+    # 2) get native logo size
+    logo_path = os.path.abspath('app/static/logo1.jpg')
     with Image.open(logo_path) as img:
         orig_w_px, orig_h_px = img.size
 
-    # 3. Your desired pixel dimensions
-    target_w_px = 1009.92
-    target_h_px = 261.12
+    # 3) compute scale factors
+    x_scale = cell_w_px / orig_w_px
+    y_scale = cell_h_px / orig_h_px
 
-    # 4. Compute the scale factors
-    x_scale = target_w_px / orig_w_px
-    y_scale = target_h_px / orig_h_px
-
-    # 5. Insert the image with those exact scales
+    # 4) insert logo so it exactly fills A1:D15
     ws2.insert_image(
         'A1',
         logo_path,
