@@ -63,15 +63,19 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
             c.setFont("Helvetica-Bold", 20)
             c.drawCentredString(width/2, height - 1.9*inch, "Contents Estimate")
 
-    def draw_table_headers(y_pos):
-        c.setFont("Helvetica-Bold", 12)
-        c.drawString(inch,            y_pos, "Category")
-        c.drawString(inch + 2.3*inch, y_pos, "Description")
-        c.drawString(inch + 4.6*inch, y_pos, "Justification")
-        c.drawString(7.1*inch,        y_pos, "Total")
-        y2 = y_pos - 0.3*inch
-        c.line(inch, y2, width - inch, y2)
-        return y2 - 0.2*inch 
+def draw_table_headers(y_pos):
+    c.setFont("Helvetica-Bold", 12)
+    # Left-aligned headers
+    c.drawString(cat_x,  y_pos, "Category")
+    c.drawString(desc_x, y_pos, "Description")
+    c.drawString(just_x, y_pos, "Justification")
+    # Right-aligned Total
+    c.drawRightString(total_x, y_pos, "Total")
+
+    # Underline across the full table width
+    y2 = y_pos - 0.3*inch
+    c.line(cat_x, y2, total_x + 0.1*inch, y2)
+    return y2 - 0.2*inch
     
     # === PAGE 1: Claim Package ===
     c.setFillColor(bg_color); c.rect(0, 0, width, height, fill=1, stroke=0)
@@ -129,7 +133,7 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     just_x       = desc_x + desc_w
     just_w       = 2.3 * inch
     total_x	 = width - inch
-    total_w	 = 7.5 * inch
+    total_w	 = width - inch
     bottom_margin= inch
     
     # Rows
