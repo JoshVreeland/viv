@@ -1,11 +1,11 @@
-import os
-import xlsxwriter
-import boto3
+    import os
+    import xlsxwriter
+    import boto3
 
-# path to Contents Estimate logo
-SHEET2_LOGO_PATH = 'app/static/logo1.jpg'  # new logo for sheet 2
+    # path to Contents Estimate logo
+    SHEET2_LOGO_PATH = 'app/static/logo1.jpg'  # new logo for sheet 2
 
-def generate_excel(pdf_path: str,
+    def generate_excel(pdf_path: str,
                    logo_path: str,
                    claim_text: str,
                    estimate_data: dict,
