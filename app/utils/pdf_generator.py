@@ -47,6 +47,16 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     c = canvas.Canvas(pdf_path, pagesize=LETTER)
     width, height = LETTER
 
+    # Layout constants (define before helper usage)
+    cat_x        = inch
+    cat_w        = 1.5 * inch
+    desc_x       = cat_x + cat_w + 0.2 * inch
+    desc_w       = 2.3 * inch
+    just_x       = desc_x + desc_w + 0.2 * inch
+    just_w       = 2.3 * inch
+    total_x      = width - inch
+    bottom_margin = inch
+
     # Helpers:
     def start_contents_page(include_title: bool):
         c.setFillColor(bg_color)
@@ -63,66 +73,6 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
             c.setFont("Helvetica-Bold", 20)
             c.drawCentredString(width/2, height - 1.9*inch, "Contents Estimate")
 
-    # === PAGE 1: Claim Package ===
-    c.setFillColor(bg_color); c.rect(0, 0, width, height, fill=1, stroke=0)
-    c.setFillColor(text_color)
-    try:
-        img = ImageReader(logo_path)
-        c.drawImage(img, 0.5*inch, height - 1.4*inch,
-                    width=3.2*inch, height=1.2*inch, preserveAspectRatio=True)
-    except:
-        pass
-
-    c.setFont("Helvetica-Bold", 20)
-    c.drawCentredString(width/2, height - 2.5*inch, "Claim Package")
-        
-    raw = claim_text or ""
-    esc = saxutils.escape(raw).replace('\t','&nbsp;'*4).replace('\r\n','\n').replace('\n','<br/>')
-    para = Paragraph(esc, body_style)
-    avail_w = width - 2*inch
-    avail_h = height - 3*inch
-    _, h = para.wrap(avail_w, avail_h)
-    para.drawOn(c, inch, height - 3*inch - h)
-        
-    c.showPage()
-        
-    # === PAGE 2+: Contents Estimate ===   
-    start_contents_page(include_title=True)
-            
-    # Metadata
-    y = height - 2.5*inch
-    for label in ["claimant","property","estimator","estimate_type","date_entered","date_completed"]:
-        label_text = f"{label.replace('_',' ').title()}: "
-        val        = estimate_data.get(label, "")
-        c.setFont("Helvetica-Bold", 12)
-        c.drawString(inch, y, label_text)
-        lw = c.stringWidth(label_text, "Helvetica-Bold", 12)
-        c.setFont("Helvetica", 12)
-        c.drawString(inch + lw, y, val)
-        y -= 0.3*inch
-    
-    # Grand total
-    y -= 0.3*inch
-    total_sum = sum(r.get("total",0) for r in estimate_data.get("rows",[]))
-    c.setFont("Helvetica-Bold", 16)
-    c.drawCentredString(width/2, y, f"Total Replacement Cost Value: ${total_sum:,.2f}")
-    y -= 0.6*inch
-        
-    # Initial table headers
-    y = draw_table_headers(y)
-    
-    # Layout constants (aligned with headers)
-    cat_x        = inch
-    cat_w        = 1.5 * inch
-    desc_x       = cat_x + cat_w
-    desc_w       = 2.3 * inch
-    just_x       = desc_x + desc_w
-    just_w       = 2.3 * inch
-    total_x	 = width - inch
-    total_w	 = width - inch
-    bottom_margin= inch
-
-    # Nested helper must be indented here, _inside_ generate_pdf
     def draw_table_headers(y_pos):
         c.setFont("Helvetica-Bold", 12)
         c.drawString(cat_x,  y_pos, "Category")
@@ -132,64 +82,90 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         y2 = y_pos - 0.3*inch
         c.line(cat_x, y2, total_x + 0.1*inch, y2)
         return y2 - 0.2*inch
-    
+
+    # === PAGE 1: Claim Package ===
+    c.setFillColor(bg_color); c.rect(0, 0, width, height, fill=1, stroke=0)
+    c.setFillColor(text_color)
+    try:
+        img = ImageReader(logo_path)
+        c.drawImage(img, 0.5*inch, height - 1.4*inch,
+                   width=3.2*inch, height=1.2*inch, preserveAspectRatio=True)
+    except:
+        pass
+
+    c.setFont("Helvetica-Bold", 20)
+    c.drawCentredString(width/2, height - 2.5*inch, "Claim Package")
+
+    raw = claim_text or ""
+    esc = saxutils.escape(raw).replace('\t','&nbsp;'*4)
+    esc = esc.replace('\r\n','\n').replace('\n','<br/>')
+    para = Paragraph(esc, body_style)
+    avail_w = width - 2*inch
+    avail_h = height - 3*inch
+    _, h = para.wrap(avail_w, avail_h)
+    para.drawOn(c, inch, height - 3*inch - h)
+
+    c.showPage()
+
+    # === PAGE 2+: Contents Estimate ===
+    start_contents_page(include_title=True)
+
+    # Metadata
+    y = height - 2.5*inch
+    for label in ["claimant","property","estimator","estimate_type","date_entered","date_completed"]:
+        label_text = f"{label.replace('_',' ').title()}: "
+        val = estimate_data.get(label, "")
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(inch, y, label_text)
+        lw = c.stringWidth(label_text, "Helvetica-Bold", 12)
+        c.setFont("Helvetica", 12)
+        c.drawString(inch + lw, y, val)
+        y -= 0.3*inch
+
+    # Grand total
+    y -= 0.3*inch
+    total_sum = sum(r.get("total", 0) for r in estimate_data.get("rows", []))
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(width/2, y, f"Total Replacement Cost Value: ${total_sum:,.2f}")
+    y -= 0.6*inch
+
+    # Table headers
+    y = draw_table_headers(y)
+
     # Rows
     for row in estimate_data.get("rows", []):
         avail_h = y - bottom_margin
-        
-        cat_para  = Paragraph(row.get("category","—"), just_style)
-        raw_j     = row.get("justification","—")
-        esc_j     = saxutils.escape(raw_j).replace('\t','&nbsp;'*4).replace('\r\n','\n').replace('\n','<br/>')
-        just_para = Paragraph(esc_j, just_style)
-    
-        w_cat, h_cat   = cat_para.wrap(cat_w,    avail_h)
-        w_just, h_just = just_para.wrap(just_w, avail_h)  
-        row_h = max(h_cat, h_just, 14)
-        
-        if y - row_h < bottom_margin:
-            c.showPage()
-            start_contents_page(include_title=False)
-            y = height - 1.9*inch    # headers 0.5" below logo
-            y = draw_table_headers(y)
-            avail_h = y - bottom_margin
-    
-        # Category (centered)
-        w_cat, _ = cat_para.wrap(cat_w, avail_h)
+
+        # Category cell
+        cat_para = Paragraph(row.get("category", "—"), just_style)
+        w_cat, h_cat = cat_para.wrap(cat_w, avail_h)
         cat_para.drawOn(c, cat_x + (cat_w - w_cat) / 2, y - h_cat)
 
-        # Description (centered)
+        # Description cell
         desc_para = Paragraph(
-            saxutils.escape(row.get("description", "—")),
-            just_style
+            saxutils.escape(row.get("description", "—")), just_style
         )
         w_desc, h_desc = desc_para.wrap(desc_w, avail_h)
         desc_para.drawOn(c, desc_x + (desc_w - w_desc) / 2, y - h_desc)
 
-        # Justification (centered)
+        # Justification cell
         raw_j = row.get("justification", "—")
-        esc_j = saxutils.escape(raw_j).replace('\t','&nbsp;'*4)\
-                                        .replace('\r\n','\n')\
-                                        .replace('\n','<br/>')
+        esc_j = saxutils.escape(raw_j).replace('\t','&nbsp;'*4)
+        esc_j = esc_j.replace('\r\n','\n').replace('\n','<br/>')
         just_para = Paragraph(esc_j, just_style)
-        w_just, _ = just_para.wrap(just_w, avail_h)
+        w_just, h_just = just_para.wrap(just_w, avail_h)
         just_para.drawOn(c, just_x + (just_w - w_just) / 2, y - h_just)
 
-        # Total (aligned with top of the cell)
-        total_para = Paragraph(
-            f"${row.get('total', 0):,.2f}",
-            just_style
-        )
-        # wrap into roughly a 0.8" wide box (tweak width if needed)
+        # Total cell
+        total_para = Paragraph(f"${row.get('total', 0):,.2f}", just_style)
         w_tot, h_tot = total_para.wrap(0.8 * inch, avail_h)
-        # draw so the top of the text sits at y - h_tot, flush with your others
         total_para.drawOn(c, total_x - w_tot, y - h_tot)
 
-        # move down to next row
-        y -= (row_h + 6)
-    
+        # next row
+        y -= (max(h_cat, h_just, h_desc, h_tot) + 6)
+
     c.save()
-    
-    
+
     # === UPLOAD PDF TO S3 (public) ===
     s3 = boto3.client(
         "s3",
@@ -198,17 +174,17 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
     )
     pdf_filename = os.path.basename(pdf_path)
-    pdf_s3_key   = f"finalized/{pdf_filename}"
-    bucket       = os.getenv("S3_BUCKET_NAME")
+    pdf_s3_key = f"finalized/{pdf_filename}"
+    bucket = os.getenv("S3_BUCKET_NAME")
     s3.upload_file(
         pdf_path,
         bucket,
         pdf_s3_key,
         ExtraArgs={"ACL": "public-read"}
     )
-    region = os.getenv("S3_REGION")   
+    region = os.getenv("S3_REGION")
     pdf_url = f"https://{bucket}.s3.{region}.amazonaws.com/{pdf_s3_key}"
-        
+
     # Generate and upload Excel → returns its public URL
     excel_url = generate_excel(
         pdf_path,
@@ -217,5 +193,5 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         estimate_data=estimate_data,
         client_name=client_name
     )
-        
+
     return pdf_url, excel_url
