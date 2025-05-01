@@ -63,20 +63,6 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
             c.setFont("Helvetica-Bold", 20)
             c.drawCentredString(width/2, height - 1.9*inch, "Contents Estimate")
 
-def draw_table_headers(y_pos):
-    c.setFont("Helvetica-Bold", 12)
-    # Left-aligned headers
-    c.drawString(cat_x,  y_pos, "Category")
-    c.drawString(desc_x, y_pos, "Description")
-    c.drawString(just_x, y_pos, "Justification")
-    # Right-aligned Total
-    c.drawRightString(total_x, y_pos, "Total")
-
-    # Underline across the full table width
-    y2 = y_pos - 0.3*inch
-    c.line(cat_x, y2, total_x + 0.1*inch, y2)
-    return y2 - 0.2*inch
-    
     # === PAGE 1: Claim Package ===
     c.setFillColor(bg_color); c.rect(0, 0, width, height, fill=1, stroke=0)
     c.setFillColor(text_color)
@@ -135,6 +121,17 @@ def draw_table_headers(y_pos):
     total_x	 = width - inch
     total_w	 = width - inch
     bottom_margin= inch
+
+    # Nested helper must be indented here, _inside_ generate_pdf
+    def draw_table_headers(y_pos):
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(cat_x,  y_pos, "Category")
+        c.drawString(desc_x, y_pos, "Description")
+        c.drawString(just_x, y_pos, "Justification")
+        c.drawRightString(total_x, y_pos, "Total")
+        y2 = y_pos - 0.3*inch
+        c.line(cat_x, y2, total_x + 0.1*inch, y2)
+        return y2 - 0.2*inch
     
     # Rows
     for row in estimate_data.get("rows", []):
