@@ -5,7 +5,6 @@ from reportlab.lib.units import inch
 from reportlab.lib.utils import ImageReader
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
-from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph
 import xml.sax.saxutils as saxutils
 import boto3
@@ -32,30 +31,23 @@ just_style = ParagraphStyle(
     name="Justification", parent=body_style, fontSize=10, leading=14
 )
 
-
 def generate_pdf(logo_path, client_name, claim_text, estimate_data):
-    # ensure output directory
     out_dir = "app/finalized_pdfs"
     os.makedirs(out_dir, exist_ok=True)
-    pdf_path = os.path.join(
-        out_dir, f"{client_name.replace(' ', '_')}_Claim.pdf"
-    )
+    pdf_path = os.path.join(out_dir, f"{client_name.replace(' ','_')}_Claim.pdf")
 
     c = canvas.Canvas(pdf_path, pagesize=LETTER)
     width, height = LETTER
-    inch = reportlab.lib.units.inch
 
-    # layout constants
+    # Layout constants
     cat_x = inch
     cat_w = 1.5 * inch
     desc_x = cat_x + cat_w + 0.2 * inch
     desc_w = 2.3 * inch
     just_x = desc_x + desc_w + 0.2 * inch
     just_w = 2.3 * inch
-    total_x = width - inch
     bottom_margin = inch
 
-    # Helpers
     def start_contents_page(include_title: bool):
         c.setFillColor(bg_color)
         c.rect(0, 0, width, height, fill=1, stroke=0)
@@ -64,88 +56,65 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
             img = ImageReader(logo_path)
             c.drawImage(
                 img,
-                0.5 * inch,
-                height - 1.4 * inch,
-                width=3.2 * inch,
-                height=1.2 * inch,
-                preserveAspectRatio=True,
+                0.5*inch, height - 1.4*inch,
+                width=3.2*inch, height=1.2*inch,
+                preserveAspectRatio=True
             )
         except:
             pass
         if include_title:
             c.setFont("Helvetica-Bold", 20)
-            c.drawCentredString(width / 2, height - 1.9 * inch, "Contents Estimate")
+            c.drawCentredString(width/2, height - 1.9*inch, "Contents Estimate")
 
     def draw_table_headers(y_pos):
         c.setFont("Helvetica-Bold", 12)
-        c.drawString(cat_x, y_pos, "Category")
-        c.drawString(desc_x, y_pos, "Description")
-        c.drawString(just_x, y_pos, "Justification")
-        c.drawRightString(total_x, y_pos, "Total")
-        y2 = y_pos - 0.3 * inch
-        c.line(cat_x, y2, total_x + 0.1 * inch, y2)
-        return y2 - 0.2 * inch
+        c.drawString(cat_x,    y_pos, "Category")
+        c.drawString(desc_x,   y_pos, "Description")
+        c.drawString(just_x,   y_pos, "Justification")
+        c.drawRightString(width - inch, y_pos, "Total")
+        y2 = y_pos - 0.3*inch
+        c.line(cat_x, y2, width - inch + 0.1*inch, y2)
+        return y2 - 0.2*inch
 
     # === PAGE 1: Claim Package ===
-    c.setFillColor(bg_color)
-    c.rect(0, 0, width, height, fill=1, stroke=0)
+    c.setFillColor(bg_color); c.rect(0,0,width,height,fill=1,stroke=0)
     c.setFillColor(text_color)
     try:
         img = ImageReader(logo_path)
-        c.drawImage(
-            img,
-            0.5 * inch,
-            height - 1.4 * inch,
-            width=3.2 * inch,
-            height=1.2 * inch,
-            preserveAspectRatio=True,
-        )
+        c.drawImage(img, 0.5*inch, height-1.4*inch, width=3.2*inch, height=1.2*inch, preserveAspectRatio=True)
     except:
         pass
-    c.setFont("Helvetica-Bold", 20)
-    c.drawCentredString(width / 2, height - 2.5 * inch, "Claim Package")
+    c.setFont("Helvetica-Bold",20)
+    c.drawCentredString(width/2, height-2.5*inch, "Claim Package")
     raw = claim_text or ""
-    esc = (
-        saxutils.escape(raw)
-        .replace("\t", "&nbsp;" * 4)
-        .replace("\r\n", "\n")
-        .replace("\n", "<br/>")
-    )
+    esc = saxutils.escape(raw).replace('\t','&nbsp;'*4).replace('\r\n','\n').replace('\n','<br/>')
     para = Paragraph(esc, body_style)
-    avail_w = width - 2 * inch
-    avail_h = height - 3 * inch
+    avail_w, avail_h = width-2*inch, height-3*inch
     _, h = para.wrap(avail_w, avail_h)
-    para.drawOn(c, inch, height - 3 * inch - h)
+    para.drawOn(c, inch, height-3*inch - h)
     c.showPage()
 
     # === PAGE 2+: Contents Estimate ===
-    start_contents_page(include_title=True)
+    start_contents_page(True)
 
     # Metadata
-    y = height - 2.5 * inch
-    for label in [
-        "claimant",
-        "property",
-        "estimator",
-        "estimate_type",
-        "date_entered",
-        "date_completed",
-    ]:
-        label_text = f"{label.replace('_',' ').title()}: "
-        val = estimate_data.get(label, "")
-        c.setFont("Helvetica-Bold", 12)
-        c.drawString(inch, y, label_text)
-        lw = c.stringWidth(label_text, "Helvetica-Bold", 12)
-        c.setFont("Helvetica", 12)
-        c.drawString(inch + lw, y, val)
-        y -= 0.3 * inch
+    y = height - 2.5*inch
+    for label in ["claimant","property","estimator","estimate_type","date_entered","date_completed"]:
+        text = f"{label.replace('_',' ').title()}: "
+        val  = estimate_data.get(label,"")
+        c.setFont("Helvetica-Bold",12)
+        c.drawString(inch, y, text)
+        lw = c.stringWidth(text, "Helvetica-Bold", 12)
+        c.setFont("Helvetica",12)
+        c.drawString(inch+lw, y, val)
+        y -= 0.3*inch
 
-    # Grand total
-    y -= 0.3 * inch
-    total_sum = sum(r.get("total", 0) for r in estimate_data.get("rows", []))
-    c.setFont("Helvetica-Bold", 16)
-    c.drawCentredString(width / 2, y, f"Total Replacement Cost Value: ${total_sum:,.2f}")
-    y -= 0.6 * inch
+    # Grand total centered
+    y -= 0.3*inch
+    total_sum = sum(r.get("total",0) for r in estimate_data.get("rows",[]))
+    c.setFont("Helvetica-Bold",16)
+    c.drawCentredString(width/2, y, f"Total Replacement Cost Value: ${total_sum:,.2f}")
+    y -= 0.6*inch
 
     # Table headers
     y = draw_table_headers(y)
@@ -155,60 +124,47 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         avail_h = y - bottom_margin
 
         # Category
-        cat_para = Paragraph(row.get("category", "—"), just_style)
-        w_cat, h_cat = cat_para.wrap(cat_w, avail_h)
-        cat_para.drawOn(c, cat_x + (cat_w - w_cat) / 2, y - h_cat)
+        cat_para = Paragraph(row.get("category","—"), just_style)
+        w_cat,h_cat = cat_para.wrap(cat_w, avail_h)
+        cat_para.drawOn(c, cat_x + (cat_w-w_cat)/2, y-h_cat)
 
         # Description
-        desc_para = Paragraph(saxutils.escape(row.get("description", "—")), just_style)
-        w_desc, h_desc = desc_para.wrap(desc_w, avail_h)
-        desc_para.drawOn(c, desc_x + (desc_w - w_desc) / 2, y - h_desc)
+        desc_para = Paragraph(saxutils.escape(row.get("description","—")), just_style)
+        w_desc,h_desc = desc_para.wrap(desc_w, avail_h)
+        desc_para.drawOn(c, desc_x + (desc_w-w_desc)/2, y-h_desc)
 
         # Justification
-        raw_j = row.get("justification", "—")
-        esc_j = (
-            saxutils.escape(raw_j)
-            .replace("\t", "&nbsp;" * 4)
-            .replace("\r\n", "\n")
-            .replace("\n", "<br/>")
-        )
+        raw_j = row.get("justification","—")
+        esc_j = saxutils.escape(raw_j).replace('\t','&nbsp;'*4).replace('\r\n','\n').replace('\n','<br/>')
         just_para = Paragraph(esc_j, just_style)
-        w_just, h_just = just_para.wrap(just_w, avail_h)
-        just_para.drawOn(c, just_x + (just_w - w_just) / 2, y - h_just)
+        w_just,h_just = just_para.wrap(just_w, avail_h)
+        just_para.drawOn(c, just_x + (just_w-w_just)/2, y-h_just)
 
-        # Total (right-aligned 1" from the right edge)
-        c.setFont("Helvetica", 10)
+        # Total (right-aligned)
+        row_h = max(h_cat, h_desc, h_just, 14)
+        c.setFont("Helvetica",10)
         c.drawRightString(
-            width - inch,            # one inch from the right
-            y - (row_h / 2) + 4,     # vertically centered in the row
-            f"${row.get('total', 0):,.2f}"
+            width - inch,
+            y - (row_h/2) + 4,
+            f"${row.get('total',0):,.2f}"
         )
 
-        # next row
         y -= (row_h + 6)
 
     c.save()
 
-    # === UPLOAD PDF TO S3 (public) ===
+    # Upload PDF to S3...
     s3 = boto3.client(
         "s3",
         region_name=os.getenv("S3_REGION"),
         aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
         aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
     )
-    pdf_filename = os.path.basename(pdf_path)
-    pdf_s3_key = f"finalized/{pdf_filename}"
-    bucket = os.getenv("S3_BUCKET_NAME")
-    s3.upload_file(
-        pdf_path, bucket, pdf_s3_key, ExtraArgs={"ACL": "public-read"}
-    )
-    region = os.getenv("S3_REGION")
-    pdf_url = f"https://{bucket}.s3.{region}.amazonaws.com/{pdf_s3_key}"
+    key = f"finalized/{os.path.basename(pdf_path)}"
+    s3.upload_file(pdf_path, os.getenv("S3_BUCKET_NAME"), key, ExtraArgs={"ACL":"public-read"})
+    pdf_url = f"https://{os.getenv('S3_BUCKET_NAME')}.s3.{os.getenv('S3_REGION')}.amazonaws.com/{key}"
 
-    # Generate and upload Excel → returns its public URL
-    excel_url = generate_excel(
-        pdf_path, logo_path=logo_path, claim_text=claim_text, estimate_data=estimate_data, client_name=client_name
-    )
-
+    # Generate & upload Excel
+    excel_url = generate_excel(pdf_path, logo_path, claim_text, estimate_data, client_name)
     return pdf_url, excel_url
 
