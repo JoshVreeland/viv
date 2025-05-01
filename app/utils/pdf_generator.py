@@ -173,14 +173,17 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         w_just, _ = just_para.wrap(just_w, avail_h)
         just_para.drawOn(c, just_x + (just_w - w_just) / 2, y - h_just)
 
-        # Total (right-aligned)
-        c.setFont("Helvetica", 10)
-	c.drawRightString(
-	    total_x,
-	    y - h_just,   # same vertical offset you use for just_para
-	    f"${row.get('total',0):,.2f}"
-	)
+        # Total (aligned with top of the cell)
+        total_para = Paragraph(
+            f"${row.get('total', 0):,.2f}",
+            just_style
+        )
+        # wrap into roughly a 0.8" wide box (tweak width if needed)
+        w_tot, h_tot = total_para.wrap(0.8 * inch, avail_h)
+        # draw so the top of the text sits at y - h_tot, flush with your others
+        total_para.drawOn(c, total_x - w_tot, y - h_tot)
 
+        # move down to next row
         y -= (row_h + 6)
     
     c.save()
