@@ -64,9 +64,19 @@ def generate_excel(pdf_path: str,
         for c in range(4):
             ws2.write_blank(r, c, None, header_bg)
 
+    ws2.merge_range('A1:D15', '', header_fmt)
+
     # 2) Logo at same scale as sheet1
+    # wherever you insert your logo on sheet2:
     sheet2_logo = os.path.abspath('app/static/logo1.jpg')
-    ws2.insert_image('A1', sheet2_logo, {'x_scale': 0.58, 'y_scale': 0.70})
+    ws2.insert_image(
+        'A1',
+        sheet2_logo,
+        {
+            'x_scale': 0.55,
+            'y_scale': 0.7
+        }
+    )
 
     # 3) Metadata rows A2:D7 (Claimant, Property, etc.) on dark background
     labels = ["Claimant", "Property", "Estimator", "Estimate Type", "Date Entered", "Date Completed"]
@@ -74,8 +84,8 @@ def generate_excel(pdf_path: str,
         row_idx = 16 + idx         # Excel rows 2–7
         key     = label.lower().replace(" ", "_")
         val     = estimate_data.get(key, "")
-        ws2.merge_range(row_idx, 0, row_idx, 1, label, header_bg)
-        ws2.merge_range(row_idx, 2, row_idx, 3, val,   header_bg)
+        ws2.merge_range(row_idx, 0, row_idx, 1, label, yellow_bold_fmt)
+        ws2.merge_range(row_idx, 2, row_idx, 3, val,   yellow_bold_fmt)
 
     # 4) Row 16 (A16:D16) bold, size 14, height 20
     subtitle_fmt = common_fmt(bold=True, font_size=14, bg_color='#3d4336', font_color='#FFFFFF', align='center', valign='vcenter')
@@ -90,7 +100,15 @@ def generate_excel(pdf_path: str,
         ws2.set_row(r, None, yellow_bg)
 
     # 6) A24:D24 white darker 5% (#F2F2F2)
-    white_bg5 = common_fmt(bg_color='#F2F2F2', align='center', valign='vcenter', border=1)
+    # make your white_bg5 format bold with 14-pt font:
+    white_bg5 = common_fmt(
+        bg_color='#F2F2F2',
+        align='center',
+        valign='vcenter',
+        border=1,
+        bold=True,
+        font_size=14
+    )
     total_val = sum(row.get('total', 0.0) for row in estimate_data.get('rows', []))
     ws2.merge_range('A24:D24',
                     f"Total Replacement Cost Value: ${total_val:,.2f}",
