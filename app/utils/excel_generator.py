@@ -74,7 +74,7 @@ def generate_excel(pdf_path: str,
         'A1',
         sheet2_logo,
         {
-            'x_scale': 0.44,
+            'x_scale': 0.55,
             'y_scale': 0.50
         }
     )
