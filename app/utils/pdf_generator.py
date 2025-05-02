@@ -43,9 +43,9 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     cat_x = inch
     cat_w = 1.5 * inch
     desc_x = cat_x + cat_w + 0.2 * inch
-    desc_w = 2.0 * inch
+    desc_w = 1.8 * inch
     just_x = desc_x + desc_w + 0.2 * inch
-    just_w = 2.0 * inch
+    just_w = 1.8 * inch
     bottom_margin = inch
     total_x = width - inch           # ← add this
     
