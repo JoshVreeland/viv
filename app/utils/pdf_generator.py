@@ -96,33 +96,25 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     
     # === PAGE 1+: Claim Package (with pagination) ===
     # 1) Escape & wrap the entire claim_text into a Paragraph
-    esc      = saxutils.escape(claim_text or "") \
-                     .replace('\t', '&nbsp;'*4) \
-                     .replace('\r\n', '\n') \
-                     .replace('\n', '<br/>')
-    para     = Paragraph(esc, body_style)
+    esc   = saxutils.escape(claim_text or "") \
+                 .replace('\t', '&nbsp;'*4) \
+                 .replace('\r\n', '\n')     \
+                 .replace('\n', '<br/>')
+    para  = Paragraph(esc, body_style)
 
     # 2) Compute how much room we have per page
-    avail_w  = width - 2 * inch
-    avail_h  = height - 3 * inch
-    y_start  = height - 3 * inch
+    avail_w = width - 2 * inch
+    avail_h = height - 3 * inch
+    y_start = height - 3 * inch
 
     # 3) Split the Paragraph into page-sized chunks
-    chunks   = para.split(avail_w, avail_h)
+    chunks = para.split(avail_w, avail_h)
 
     # 4) Draw each chunk on its own page, re-drawing the header/logo each time
     for idx, chunk in enumerate(chunks):
         if idx > 0:
             c.showPage()
-        start_claim_page()              # redraw background, logo & “Claim Package”
-        w, h = chunk.wrap(avail_w, avail_h)
-        chunk.drawOn(c, inch, y_start - h)
- 
-    # render each chunk on its own page (with header & logo)
-    for idx, chunk in enumerate(chunks):
-        if idx > 0:
-            c.showPage()
-        start_claim_page()
+        start_claim_page()                # redraw background, logo & “Claim Package”
         w, h = chunk.wrap(avail_w, avail_h)
         chunk.drawOn(c, inch, y_start - h)
     
