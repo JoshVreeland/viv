@@ -23,19 +23,20 @@ def generate_excel(pdf_path: str,
     wb = xlsxwriter.Workbook(excel_path)
 
     # === COMMON FORMATS ===
-    common_fmt = lambda **kw: wb.add_format({'font_name': 'Times New Roman', **kw})
+    common_fmt = lambda **kw: wb.add_format({'font_name': 'Times New Roman', align='center', valign='vcenter', text_wrap=True, **kw})
     bg_fmt          = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, border=0)
     border_fmt      = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, border=1)
-    currency_fmt    = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', num_format='$#,##0.00', border=1)
+    currency_fmt    = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, num_format='$#,##0.00', border=1)
     yellow_bold_fmt = common_fmt(bg_color='#F2CC0C', bold=True, align='center', valign='vcenter', text_wrap=True, border=1)
     dark_fmt        = common_fmt(bg_color='#3B4232')
     grey_bold_fmt   = common_fmt(bg_color='#D4D4C9', bold=True, font_size=14, align='center', valign='vcenter', text_wrap=True, border=1)
-    header_fmt      = common_fmt(bg_color='#3d4336', font_color='#FFFFFF', align='center', valign='vcenter', border=1)
+    header_fmt      = common_fmt(bg_color='#3d4336', font_color='#FFFFFF', text_wrap=True, align='center', valign='vcenter', border=1)
+    top_fmt         = common_fmt(bg_color='#FFFDFA', valign='top', border=0)
 
     # === SHEET 1: Claim Package (unchanged) ===
     ws1 = wb.add_worksheet('Claim Package')
-    for r in range(100):
-        for c in range(100):
+    for r in range(1000):
+        for c in range(1000):
             ws1.write_blank(r, c, None, bg_fmt)
     ws1.hide_gridlines(2)
     ws1.set_tab_color('#FFFDFA')
@@ -45,9 +46,10 @@ def generate_excel(pdf_path: str,
             ws1.write_blank(r, c, None, bg_fmt)
     for r in range(9, 15):
         ws1.set_row(r, 20, bg_fmt)
-    ws1.merge_range('A1:H15', '', border_fmt)
+    ws1.merge_range('A1:H15', '', bg_fmt)
     ws1.insert_image('A1', logo_path, {'x_scale': 0.39, 'y_scale': 0.36})
-    ws1.merge_range('A16:H40', claim_text, border_fmt)
+    ws1.merge_range('A16:H61', claim_text, top_fmt)
+    ws1.set_column('AA:XFD', None, None, { 'hidden': True })
 
     # === SHEET 2: Contents Estimate (your specific tweaks) ===
     ws2 = wb.add_worksheet('Contents Estimate')
@@ -134,6 +136,8 @@ def generate_excel(pdf_path: str,
         ws2.write(r, 1, row.get('description', ''),  desc_fmt)
         ws2.write(r, 2, row.get('justification', ''),cell_fmt)
         ws2.write(r, 3, row.get('total', 0.0),       total_fmt)
+
+    ws2.set_column('AA:XFD', None, None, { 'hidden': True })
 
     wb.close()
 
