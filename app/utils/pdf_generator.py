@@ -43,9 +43,9 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     cat_x = inch
     cat_w = 1.5 * inch
     desc_x = cat_x + cat_w + 0.2 * inch
-    desc_w = 2.3 * inch
+    desc_w = 2.0 * inch
     just_x = desc_x + desc_w + 0.2 * inch
-    just_w = 2.3 * inch
+    just_w = 2.0 * inch
     bottom_margin = inch
     total_x = width - inch           # ← add this
     
@@ -95,27 +95,36 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         return y2 - 0.2*inch
     
     # === PAGE 1+: Claim Package (with pagination) ===
-    start_claim_page()
-        
-    # escape & build a Paragraph
-    raw = saxutils.escape(claim_text or "")
-    raw = raw.replace('\t', '&nbsp;'*4).replace('\r\n','\n').replace('\n','<br/>')
-    para = Paragraph(raw, body_style)
-            
-    # available width & height for text
-    avail_w = width - 2*inch
-    avail_h = height - 3*inch
-                
-    # split into page‐sized chunks
-    chunks = para.split(avail_w, avail_h)
-    y_start = height - 3*inch
-        
-    for i, frag in enumerate(chunks):
-        if i > 0:
+    # 1) Escape & wrap the entire claim_text into a Paragraph
+    esc      = saxutils.escape(claim_text or "") \
+                     .replace('\t', '&nbsp;'*4) \
+                     .replace('\r\n', '\n') \
+                     .replace('\n', '<br/>')
+    para     = Paragraph(esc, body_style)
+
+    # 2) Compute how much room we have per page
+    avail_w  = width - 2 * inch
+    avail_h  = height - 3 * inch
+    y_start  = height - 3 * inch
+
+    # 3) Split the Paragraph into page-sized chunks
+    chunks   = para.split(avail_w, avail_h)
+
+    # 4) Draw each chunk on its own page, re-drawing the header/logo each time
+    for idx, chunk in enumerate(chunks):
+        if idx > 0:
             c.showPage()
-            start_claim_page()
-        w, h = frag.wrap(avail_w, avail_h)
-        frag.drawOn(c, inch, y_start - h)
+        start_claim_page()              # redraw background, logo & “Claim Package”
+        w, h = chunk.wrap(avail_w, avail_h)
+        chunk.drawOn(c, inch, y_start - h)
+ 
+    # render each chunk on its own page (with header & logo)
+    for idx, chunk in enumerate(chunks):
+        if idx > 0:
+            c.showPage()
+        start_claim_page()
+        w, h = chunk.wrap(avail_w, avail_h)
+        chunk.drawOn(c, inch, y_start - h)
     
     # === PAGE 2+: Contents Estimate ===
     start_contents_page(True)
