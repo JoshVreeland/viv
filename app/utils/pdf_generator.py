@@ -103,20 +103,25 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     para  = Paragraph(esc, body_style)
 
     # 2) Compute how much room we have per page
-    avail_w = width - 2 * inch
-    avail_h = height - 3 * inch
-    y_start = height - 3 * inch
+    avail_w       = width - 2 * inch
+    avail_h       = height - 3 * inch
+    y_start       = height - 3 * inch
+    bottom_margin = inch     # adjust this if your bottom margin is different
 
     # 3) Split the Paragraph into page-sized chunks
     chunks = para.split(avail_w, avail_h)
 
-    # 4) Draw each chunk on its own page, re-drawing the header/logo each time
-    for idx, chunk in enumerate(chunks):
-        if idx > 0:
-            c.showPage()
-        start_claim_page()                # redraw background, logo & “Claim Package”
+    # 4) Draw each chunk with a pagination check
+    y = y_start
+    start_claim_page()      # draw header/logo on page 1
+    for chunk in chunks:
         w, h = chunk.wrap(avail_w, avail_h)
-        chunk.drawOn(c, inch, y_start - h)
+        if y - h < bottom_margin:
+            c.showPage()
+            start_claim_page()     # redraw header/logo on new page
+            y = y_start
+        chunk.drawOn(c, inch, y - h)
+        y -= h
     
     # === PAGE 2+: Contents Estimate ===
     start_contents_page(True)
