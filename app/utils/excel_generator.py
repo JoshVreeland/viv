@@ -23,7 +23,14 @@ def generate_excel(pdf_path: str,
     wb = xlsxwriter.Workbook(excel_path)
 
     # === COMMON FORMATS ===
-    common_fmt = lambda **kw: wb.add_format({'font_name': 'Times New Roman', align='center', valign='vcenter', text_wrap=True, **kw})
+    common_fmt = lambda **kw: wb.add_format({
+        'font_name': 'Times New Roman',
+        'align': 'center',
+        'valign': 'vcenter',
+        'text_wrap': True,
+        **kw
+    })
+
     bg_fmt          = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, border=0)
     border_fmt      = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, border=1)
     currency_fmt    = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, num_format='$#,##0.00', border=1)
@@ -35,8 +42,8 @@ def generate_excel(pdf_path: str,
 
     # === SHEET 1: Claim Package (unchanged) ===
     ws1 = wb.add_worksheet('Claim Package')
-    for r in range(1000):
-        for c in range(1000):
+    for r in range(100):
+        for c in range(30):
             ws1.write_blank(r, c, None, bg_fmt)
     ws1.hide_gridlines(2)
     ws1.set_tab_color('#FFFDFA')
