@@ -47,6 +47,7 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     just_x = desc_x + desc_w + 0.2 * inch
     just_w = 2.3 * inch
     bottom_margin = inch
+    total_x = width - inch           # ← add this
     
     def start_claim_page():
         c.setFillColor(bg_color)
@@ -144,6 +145,29 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     # Rows
     for row in estimate_data.get("rows", []):
         avail_h = y - bottom_margin
+
+        # ——— pagination check ———
+        # wrap each cell so we know how tall this row wants to be
+        tmp_cat = Paragraph(row.get("category","—"), just_style)
+        w_cat, h_cat = tmp_cat.wrap(cat_w, avail_h)
+
+        tmp_desc = Paragraph(saxutils.escape(row.get("description","—")), just_style)
+        w_desc, h_desc = tmp_desc.wrap(desc_w, avail_h)
+
+        raw_j = row.get("justification","—")
+        esc_j = saxutils.escape(raw_j).replace('\t','&nbsp;'*4).replace('\r\n','\n').replace('\n','<br/>')
+        tmp_just = Paragraph(esc_j, just_style)
+        w_just, h_just = tmp_just.wrap(just_w, avail_h)
+
+        row_h = max(h_cat, h_desc, h_just, 14)
+        if y - row_h < bottom_margin:
+            # new page
+            c.showPage()
+            start_contents_page(False)
+            y = height - 1.9*inch
+            y = draw_table_headers(y)
+            avail_h = y - bottom_margin
+        # ——— end pagination check ———
         
         # Category
         cat_para = Paragraph(row.get("category", "—"), just_style)
