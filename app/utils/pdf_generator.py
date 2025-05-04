@@ -172,35 +172,6 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         c.drawRightString(width - right_margin, y - (row_h/2) + 4, f"${row.get('total',0):,.2f}")
         y -= (row_h + 6)
 
-    # --- Claim Package pagination (replace your old block) ---
-    esc = saxutils.escape(claim_text or "") \
-        .replace('\t','&nbsp;'*4) \
-        .replace('\r\n','\n') \
-        .replace('\n','<br/>')
-    para = Paragraph(esc, body_style)
-
-    left_margin   = inch
-    top_margin    = 3 * inch
-    bottom_margin = inch
-
-    y_start     = height - top_margin
-    body_width  = width  - 2*inch
-    body_height = y_start - bottom_margin
-
-    chunks = para.split(body_width, body_height)
-
-    start_claim_page()      # draw header/logo on page 1
-    y = y_start
-    for chunk in chunks:
-        w, h = chunk.wrap(body_width, body_height)
-        if y - h < bottom_margin:
-            c.showPage()
-            start_claim_page()  # redraw header/logo on new page
-            y = y_start
-        chunk.drawOn(c, left_margin, y - h)
-        y -= h
-    # --- end replacement ---
-    
     # === PAGE 2+: Contents Estimate ===
     start_contents_page(True)
         
