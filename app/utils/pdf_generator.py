@@ -54,6 +54,37 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
             c.setFont("Helvetica-Bold", 20)
             c.drawCentredString(width/2, height - 1.9*inch, "Contents Estimate")
 
+    def _platypus_start_claim_page(canvas, doc): 
+        # adapter for Platypus: call your existing zero-arg header function
+        start_claim_page()
+             
+    def draw_table_headers(y_pos):
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(cat_x, y_pos, "Category")
+        c.drawString(desc_x, y_pos, "Description")
+        c.drawString(just_x, y_pos, "Justification")
+        c.drawRightString(width - inch, y_pos, "Total")
+        y2 = y_pos - 0.3*inch
+        c.line(cat_x, y2, width - inch + 0.1*inch, y2)
+        return y2 - 0.2*inch
+
+    def start_claim_page():
+        c.setFillColor(bg_color)
+        c.rect(0, 0, width, height, fill=1, stroke=0)
+        c.setFillColor(text_color)
+        try:
+            img = ImageReader(logo_path)
+            c.drawImage(
+                img,
+                0.5*inch, height - 1.4*inch,
+                width=3.2*inch, height=1.2*inch,
+                preserveAspectRatio=True
+            )
+        except:
+            pass
+        c.setFont("Helvetica-Bold", 20)
+        c.drawCentredString(width/2, height - 2.5*inch, "Claim Package")
+
     # 1) Prepare output directory and file path
     out_dir = "app/finalized_pdfs"
     os.makedirs(out_dir, exist_ok=True)
