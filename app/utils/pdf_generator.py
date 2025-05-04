@@ -101,38 +101,41 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         return y2 - 0.2*inch
     
 
-    # === PAGE 1+: Claim Package (with pagination via Platypus) ===
-    esc = saxutils.escape(claim_text or "") \
-        .replace('\t', '&nbsp;'*4) \
-        .replace('\r\n', '\n') \
-        .replace('\n', '<br/>')
-
-    doc = BaseDocTemplate(
-        c._filename,             # reuse the same file your canvas is writing to
-        pagesize=(width, height),
-        leftMargin=inch,
-        rightMargin=inch,
-        topMargin=3*inch,
-        bottomMargin=inch
+    # === PAGE 1+: Claim Package (with pagination) ===
+    # 1) Escape & wrap the entire claim_text into a Paragraph
+    esc = saxutils.escape(claim_text or "")
+    esc = (
+        esc.replace('\t', '&nbsp;'*4)
+           .replace('\r\n', '\n')
+           .replace('\n', '<br/>')
     )
+    para = Paragraph(esc, body_style)
 
-    frame = Frame(
-        inch,                    # x
-        inch,                    # y
-        width - 2*inch,          # width
-        height - 4*inch,         # height = total minus top+bottom margins
-        id="claim_frame"
-    )
+    # 2) Set up your margins & compute the body area
+    left_margin   = inch
+    right_margin  = inch
+    top_margin    = 3 * inch
+    bottom_margin = inch
 
-    tpl = PageTemplate(
-        id="ClaimPackage",
-        frames=[frame],
-        onPage=_platypus_start_claim_page  # draws your logo & title each page
-    )
-    doc.addPageTemplates([tpl])
+    y_top       = height - top_margin
+    body_width  = width  - left_margin - right_margin
+    body_height = y_top   - bottom_margin
 
-    story = [Paragraph(esc, body_style)]
-    doc.build(story)
+    # 3) Split the Paragraph into page-sized chunks
+    chunks = para.split(body_width, body_height)
+
+    # 4) Draw each chunk, paginating when necessary
+    start_claim_page()      # draw header/logo on the very first page
+    y_cursor = y_top
+    for idx, chunk in enumerate(chunks):
+        if idx > 0:
+            c.showPage()
+            start_claim_page()      # redraw header/logo on new page
+            y_cursor = y_top
+
+        w, h = chunk.wrap(body_width, body_height)
+        chunk.drawOn(c, left_margin, y_cursor - h)
+        y_cursor -= h
     
     # === PAGE 2+: Contents Estimate ===
     start_contents_page(True)
