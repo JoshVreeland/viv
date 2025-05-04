@@ -37,11 +37,11 @@ just_style = ParagraphStyle(
 def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     out_dir = "app/finalized_pdfs"
     os.makedirs(out_dir, exist_ok=True)
-    pdf_path = os.path.join(out_dir, f"{client_name.replace(' ','_')}_Claim.pdf")
-        
+    pdf_path = os.path.join(out_dir, f"{client_name.replace(' ', '_')}_Claim.pdf")
+
     c = canvas.Canvas(pdf_path, pagesize=LETTER)
     width, height = LETTER
-        
+
     # Layout constants
     cat_x = inch
     cat_w = 1.5 * inch
@@ -50,30 +50,27 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     just_x = desc_x + desc_w + 0.2 * inch
     just_w = 1.8 * inch
     bottom_margin = inch
-    total_x = width - inch           # ← add this
-    
-    def start_claim_page(canvas, doc):
-        # full-page background
-        canvas.setFillColor(bg_color)
-        canvas.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
+    total_x = width - inch
 
-        canvas.setFillColor(text_color)
-        # logo
+    def start_claim_page():
+        c.setFillColor(bg_color)
+        c.rect(0, 0, width, height, fill=1, stroke=0)
+        c.setFillColor(text_color)
         try:
             img = ImageReader(logo_path)
-            canvas.drawImage(
+            c.drawImage(
                 img,
-                0.5*inch, PAGE_HEIGHT - 1.4*inch,
-                width=3.2*inch, height=1.2*inch,
+                0.5 * inch,
+                height - 1.4 * inch,
+                width=3.2 * inch,
+                height=1.2 * inch,
                 preserveAspectRatio=True
             )
-        except:
+        except Exception:
             pass
+        c.setFont("Helvetica-Bold", 20)
+        c.drawCentredString(width / 2, height - 2.5 * inch, "Claim Package")
 
-        # title
-        canvas.setFont("Helvetica-Bold", 20)
-        canvas.drawCentredString(PAGE_WIDTH/2, PAGE_HEIGHT - 2.5*inch, "Claim Package")
-    
     def start_contents_page(include_title: bool):
         c.setFillColor(bg_color)
         c.rect(0, 0, width, height, fill=1, stroke=0)
@@ -82,30 +79,31 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
             img = ImageReader(logo_path)
             c.drawImage(
                 img,
-                0.5*inch, height - 1.4*inch,
-                width=3.2*inch, height=1.2*inch,
+                0.5 * inch,
+                height - 1.4 * inch,
+                width=3.2 * inch,
+                height=1.2 * inch,
                 preserveAspectRatio=True
             )
-        except:
+        except Exception:
             pass
         if include_title:
             c.setFont("Helvetica-Bold", 20)
-            c.drawCentredString(width/2, height - 1.9*inch, "Contents Estimate")
+            c.drawCentredString(width / 2, height - 1.9 * inch, "Contents Estimate")
 
-    def _platypus_start_claim_page(canvas, doc):
-        # adapter for Platypus: call your existing zero-arg header function
+    def _platypus_start_claim_page(canvas_arg, doc):
+        # adapter for Platypus: call your zero-arg header
         start_claim_page()
-    
+
     def draw_table_headers(y_pos):
         c.setFont("Helvetica-Bold", 12)
         c.drawString(cat_x, y_pos, "Category")
         c.drawString(desc_x, y_pos, "Description")
         c.drawString(just_x, y_pos, "Justification")
         c.drawRightString(width - inch, y_pos, "Total")
-        y2 = y_pos - 0.3*inch
-        c.line(cat_x, y2, width - inch + 0.1*inch, y2)
-        return y2 - 0.2*inch
-    
+        y2 = y_pos - 0.3 * inch
+        c.line(cat_x, y2, width - inch + 0.1 * inch, y2)
+        return y2 - 0.2 * inch    
 
     # === PAGE 1 Pageless Claim Package ===
     # 1) Escape & wrap the entire claim_text into a Paragraph
@@ -124,25 +122,26 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     bottom_margin = inch
 
     body_width = width - left_margin - right_margin
-
-    # Asking ReportLab: "If I had infinite height, how tall would this para be?"
+    # pretend we have infinite vertical room
     _, full_text_height = para.wrap(body_width, 1e6)
 
-    # Total page height = top + text + bottom
+    # total page height = header + text + footer
     page_height = top_margin + full_text_height + bottom_margin
 
     # 3) Recreate your Canvas with that custom height
     c = canvas.Canvas(pdf_path, pagesize=(width, page_height))
+    # override height so your header draws correctly
+    height = page_height
 
     # 4) Draw header/logo once at the top
     start_claim_page()
 
     # 5) Draw the paragraph in one go
-    #    Y-origin for drawOn = page_height - top_margin - full_text_height
+    #    y = page_height - top_margin - full_text_height
     para.drawOn(
         c,
         left_margin,
-        page_height - top_margin - full_text_height
+        height - top_margin - full_text_height
     )
     
     # === PAGE 2+: Contents Estimate ===
