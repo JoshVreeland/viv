@@ -85,6 +85,10 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         if include_title:
             c.setFont("Helvetica-Bold", 20)
             c.drawCentredString(width/2, height - 1.9*inch, "Contents Estimate")
+
+    def _platypus_start_claim_page(canvas, doc):
+    # adapter for Platypus: call your existing zero-arg header function
+    start_claim_page()
     
     def draw_table_headers(y_pos):
         c.setFont("Helvetica-Bold", 12)
@@ -96,17 +100,15 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         c.line(cat_x, y2, width - inch + 0.1*inch, y2)
         return y2 - 0.2*inch
     
-    # === PAGE 1+: Claim Package (with pagination) via Platypus ===
-    # 1) Escape your text exactly as before
+
+    # === PAGE 1+: Claim Package (with pagination via Platypus) ===
     esc = saxutils.escape(claim_text or "") \
         .replace('\t', '&nbsp;'*4) \
         .replace('\r\n', '\n') \
         .replace('\n', '<br/>')
 
-    # 2) Build a small Platypus document around your existing canvas
-    #    (it will stream into the same PDF you're already writing to)
     doc = BaseDocTemplate(
-        c._filename,              # use the same file your canvas is writing to
+        c._filename,             # reuse the same file your canvas is writing to
         pagesize=(width, height),
         leftMargin=inch,
         rightMargin=inch,
@@ -114,27 +116,22 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         bottomMargin=inch
     )
 
-    # 3) Define a single frame that occupies your full body area
     frame = Frame(
-        inch,                     # left
-        inch,                     # bottom
-        width - 2*inch,           # width
-        height - 4*inch,          # height = total - (topMargin + bottomMargin)
+        inch,                    # x
+        inch,                    # y
+        width - 2*inch,          # width
+        height - 4*inch,         # height = total minus top+bottom margins
         id="claim_frame"
     )
 
-    # 4) Attach a PageTemplate that uses your existing header function
     tpl = PageTemplate(
         id="ClaimPackage",
         frames=[frame],
-        onPage=start_claim_page   # this draws your logo/title on *every* page
+        onPage=_platypus_start_claim_page  # draws your logo & title each page
     )
     doc.addPageTemplates([tpl])
 
-    # 5) Create the “story” of flowables: just one big Paragraph
     story = [Paragraph(esc, body_style)]
-
-    # 6) Build it! Platypus will split the Paragraph into as many pages as needed.
     doc.build(story)
     
     # === PAGE 2+: Contents Estimate ===
