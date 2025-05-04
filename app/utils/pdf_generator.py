@@ -87,8 +87,8 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
             c.drawCentredString(width/2, height - 1.9*inch, "Contents Estimate")
 
     def _platypus_start_claim_page(canvas, doc):
-    # adapter for Platypus: call your existing zero-arg header function
-    start_claim_page()
+        # adapter for Platypus: call your existing zero-arg header function
+        start_claim_page()
     
     def draw_table_headers(y_pos):
         c.setFont("Helvetica-Bold", 12)
