@@ -96,11 +96,11 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     
     # === PAGE 1+: Claim Package (with pagination) ===
     # 1) Escape & wrap the entire claim_text into a Paragraph
-    esc   = saxutils.escape(claim_text or "") \
-                 .replace('\t', '&nbsp;'*4) \
-                 .replace('\r\n', '\n')     \
-                 .replace('\n', '<br/>')
-    para  = Paragraph(esc, body_style)
+    esc = saxutils.escape(claim_text or "") \
+        .replace('\t', '&nbsp;'*4) \
+        .replace('\r\n', '\n') \
+        .replace('\n', '<br/>')
+    para = Paragraph(esc, body_style)
 
     # 2) Set up your margins & available space
     left_margin   = inch
@@ -115,13 +115,20 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     # 3) Split the Paragraph into page-sized chunks
     chunks = para.split(avail_w, avail_h)
 
-    # 4) Draw each chunk, paginating when necessary
-    for idx, chunk in enumerate(chunks):
-        if idx > 0:
+    # 4) Draw each chunk, paginating as you go
+    start_claim_page()            # draw header/logo on page 1
+    y = y_start
+    for chunk in chunks:
+        w, h = chunk.wrap(avail_w, initial_avail_h)
+        # if this chunk won't fit, start a new page
+        if y - h < bottom_margin:
             c.showPage()
-        start_claim_page()    # redraw background, logo & “Claim Package”
-        w, h = chunk.wrap(avail_w, avail_h)
-        chunk.drawOn(c, left_margin, y_start - h)
+            start_claim_page()
+            y = y_start
+        # draw the chunk at the current cursor
+        chunk.drawOn(c, left_margin, y - h)
+        # move the cursor down
+        y -= h
     
     # === PAGE 2+: Contents Estimate ===
     start_contents_page(True)
