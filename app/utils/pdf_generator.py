@@ -1,3 +1,4 @@
+def generate_pdf(logo_path, client_name, claim_text, estimate_data):
 import os
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import LETTER  
@@ -34,161 +35,140 @@ just_style = ParagraphStyle(
     name="Justification", parent=body_style, fontSize=10, leading=14
 )
             
-def generate_pdf(logo_path, client_name, claim_text, estimate_data):
+    # 1) Prepare output path
+    out_dir = "app/finalized_pdfs"
+    os.makedirs(out_dir, exist_ok=True)
+    pdf_path = os.path.join(out_dir, f"{client_name.replace(' ', '_')}_Claim.pdf")
 
-    def start_contents_page(include_title: bool):
-        c.setFillColor(bg_color)
+    # 2) Create Canvas
+    c = canvas.Canvas(pdf_path, pagesize=LETTER)
+    width, height = LETTER
+
+    # 3) Layout constants
+    left_margin   = inch
+    right_margin  = inch
+    top_margin    = 3 * inch
+    bottom_margin = inch
+
+    # table columns (for Contents Estimate)
+    cat_x, cat_w   = left_margin,           1.5 * inch
+    desc_x, desc_w = cat_x + cat_w + 0.2*inch, 1.8 * inch
+    just_x, just_w = desc_x + desc_w + 0.2*inch, 1.8 * inch
+
+    # 4) Helper functions
+    def start_claim_page():
+        c.setFillColor(colors.HexColor("#FEFDF9"))
         c.rect(0, 0, width, height, fill=1, stroke=0)
-        c.setFillColor(text_color)
+        c.setFillColor(colors.HexColor("#3D4335"))
         try:
             img = ImageReader(logo_path)
-            c.drawImage(
-                img,
-                0.5*inch, height - 1.4*inch,
-                width=3.2*inch, height=1.2*inch,
-                preserveAspectRatio=True
-            )
+            c.drawImage(img, 0.5*inch, height - 1.4*inch,
+                        width=3.2*inch, height=1.2*inch,
+                        preserveAspectRatio=True)
+        except:
+            pass
+        c.setFont("Helvetica-Bold", 20)
+        c.drawCentredString(width/2, height - 2.5*inch, "Claim Package")
+
+    def start_contents_page(include_title: bool):
+        c.setFillColor(colors.HexColor("#FEFDF9"))
+        c.rect(0, 0, width, height, fill=1, stroke=0)
+        c.setFillColor(colors.HexColor("#3D4335"))
+        try:
+            img = ImageReader(logo_path)
+            c.drawImage(img, 0.5*inch, height - 1.4*inch,
+                        width=3.2*inch, height=1.2*inch,
+                        preserveAspectRatio=True)
         except:
             pass
         if include_title:
             c.setFont("Helvetica-Bold", 20)
             c.drawCentredString(width/2, height - 1.9*inch, "Contents Estimate")
 
-    def _platypus_start_claim_page(canvas, doc): 
-        # adapter for Platypus: call your existing zero-arg header function
-        start_claim_page()
-             
     def draw_table_headers(y_pos):
         c.setFont("Helvetica-Bold", 12)
-        c.drawString(cat_x, y_pos, "Category")
-        c.drawString(desc_x, y_pos, "Description")
-        c.drawString(just_x, y_pos, "Justification")
-        c.drawRightString(width - inch, y_pos, "Total")
+        c.drawString(cat_x,   y_pos, "Category")
+        c.drawString(desc_x,  y_pos, "Description")
+        c.drawString(just_x,  y_pos, "Justification")
+        c.drawRightString(width - right_margin, y_pos, "Total")
         y2 = y_pos - 0.3*inch
-        c.line(cat_x, y2, width - inch + 0.1*inch, y2)
+        c.line(cat_x, y2, width - right_margin + 0.1*inch, y2)
         return y2 - 0.2*inch
 
-    def start_claim_page():
-        c.setFillColor(bg_color)
-        c.rect(0, 0, width, height, fill=1, stroke=0)
-        c.setFillColor(text_color)
-        try:
-            img = ImageReader(logo_path)
-            c.drawImage(
-                img,
-                0.5*inch, height - 1.4*inch,
-                width=3.2*inch, height=1.2*inch,
-                preserveAspectRatio=True
-            )
-        except:
-            pass
-        c.setFont("Helvetica-Bold", 20)
-        c.drawCentredString(width/2, height - 2.5*inch, "Claim Package")
-
-    # 1) Prepare output directory and file path
-    out_dir = "app/finalized_pdfs"
-    os.makedirs(out_dir, exist_ok=True)
-    pdf_path = os.path.join(out_dir, f"{client_name.replace(' ', '_')}_Claim.pdf")
-
-    # 2) Create canvas
-    c = canvas.Canvas(pdf_path, pagesize=LETTER)
-    width, height = LETTER
-
-    # Helper: draw Claim Package header/logo
-    def start_claim_page():
-        c.setFillColor(bg_color)
-        c.rect(0, 0, width, height, fill=1, stroke=0)
-        c.setFillColor(text_color)
-        try:
-            img = ImageReader(logo_path)
-            c.drawImage(
-                img,
-                0.5 * inch,
-                height - 1.4 * inch,
-                width=3.2 * inch,
-                height=1.2 * inch,
-                preserveAspectRatio=True
-            )
-        except Exception:
-            pass
-        c.setFont("Helvetica-Bold", 20)
-        c.drawCentredString(width / 2, height - 2.5 * inch, "Claim Package")
-
-    # 3) Manual pagination for Claim Package text
+    # 5) Claim Package pagination
     esc = saxutils.escape(claim_text or "")
-    esc = esc.replace('\t', '&nbsp;'*4).replace('\r\n', '\n').replace('\n', '<br/>')
+    esc = (esc.replace('\t', '&nbsp;'*4)
+              .replace('\r\n', '\n')
+              .replace('\n', '<br/>'))
     para = Paragraph(esc, body_style)
 
-    left_margin = inch
-    right_margin = inch
-    top_margin = 3 * inch
-    bottom_margin = inch
-
-    y_start = height - top_margin
-    body_width = width - left_margin - right_margin
-    body_height = y_start - bottom_margin
+    y_cursor    = height - top_margin
+    body_width  = width - left_margin - right_margin
+    body_height = y_cursor - bottom_margin
 
     chunks = para.split(body_width, body_height)
 
     start_claim_page()
-    y = y_start
     for chunk in chunks:
         w, h = chunk.wrap(body_width, body_height)
-        if y - h < bottom_margin:
+        if y_cursor - h < bottom_margin:
             c.showPage()
             start_claim_page()
-            y = y_start
-        chunk.drawOn(c, left_margin, y - h)
-        y -= h
+            y_cursor = height - top_margin
+        chunk.drawOn(c, left_margin, y_cursor - h)
+        y_cursor -= h
 
-    # 4) Contents Estimate section
-    # Draw contents page(s) as before
+    # 6) Contents Estimate (new page)
+    c.showPage()
     start_contents_page(True)
-    y = height - 2.5 * inch
-    for label in ["claimant", "property", "estimator", "estimate_type", "date_entered", "date_completed"]:
+    y = height - 2.5*inch
+
+    # metadata
+    for label in ["claimant","property","estimator","estimate_type","date_entered","date_completed"]:
         text = f"{label.replace('_',' ').title()}: "
-        val = estimate_data.get(label, "")
+        val  = estimate_data.get(label, "")
         c.setFont("Helvetica-Bold", 12)
-        c.drawString(inch, y, text)
+        c.drawString(left_margin, y, text)
         lw = c.stringWidth(text, "Helvetica-Bold", 12)
         c.setFont("Helvetica", 12)
-        c.drawString(inch + lw, y, val)
-        y -= 0.3 * inch
+        c.drawString(left_margin + lw, y, val)
+        y -= 0.3*inch
 
-    y -= 0.3 * inch
-    total_sum = sum(r.get("total", 0) for r in estimate_data.get("rows", []))
+    # grand total
+    y -= 0.3*inch
+    total_sum = sum(r.get("total",0) for r in estimate_data.get("rows",[]))
     c.setFont("Helvetica-Bold", 16)
     c.drawCentredString(width/2, y, f"Total Replacement Cost Value: ${total_sum:,.2f}")
-    y -= 0.6 * inch
+    y -= 0.6*inch
 
+    # table + pagination
     y = draw_table_headers(y)
     for row in estimate_data.get("rows", []):
-        avail_h = y - bottom_margin
-        tmp_cat = Paragraph(row.get("category","—"), just_style)
-        w_cat, h_cat = tmp_cat.wrap(cat_w, avail_h)
-        tmp_desc = Paragraph(saxutils.escape(row.get("description","—")), just_style)
-        w_desc, h_desc = tmp_desc.wrap(desc_w, avail_h)
-        esc_j = saxutils.escape(row.get("justification","—")).replace('\t','&nbsp;'*4).replace('\r\n','\n').replace('\n','<br/>')
-        tmp_just = Paragraph(esc_j, just_style)
-        w_just, h_just = tmp_just.wrap(just_w, avail_h)
+        esc_j = (saxutils.escape(row.get("justification","—"))
+                   .replace('\t','&nbsp;'*4)
+                   .replace('\r\n','\n')
+                   .replace('\n','<br/>'))
+
+        tmp_cat  = Paragraph(row.get("category","—"), body_style)
+        tmp_desc = Paragraph(saxutils.escape(row.get("description","—")), body_style)
+        tmp_just = Paragraph(esc_j, body_style)
+
+        w_cat, h_cat   = tmp_cat.wrap(cat_w,  y - bottom_margin)
+        w_desc, h_desc = tmp_desc.wrap(desc_w, y - bottom_margin)
+        w_just, h_just = tmp_just.wrap(just_w, y - bottom_margin)
         row_h = max(h_cat, h_desc, h_just, 14)
+
         if y - row_h < bottom_margin:
             c.showPage()
             start_contents_page(False)
-            y = height - 1.9 * inch
+            y = height - 1.9*inch
             y = draw_table_headers(y)
-            avail_h = y - bottom_margin
-        cat_para = Paragraph(row.get("category","—"), just_style)
-        w_cat, h_cat = cat_para.wrap(cat_w, avail_h)
-        cat_para.drawOn(c, cat_x + (cat_w - w_cat)/2, y - h_cat)
-        desc_para = Paragraph(saxutils.escape(row.get("description","—")), just_style)
-        w_desc, h_desc = desc_para.wrap(desc_w, avail_h)
-        desc_para.drawOn(c, desc_x + (desc_w - w_desc)/2, y - h_desc)
-        just_para = Paragraph(esc_j, just_style)
-        w_just, h_just = just_para.wrap(just_w, avail_h)
-        just_para.drawOn(c, just_x + (just_w - w_just)/2, y - h_just)
+
+        tmp_cat.drawOn(c,  cat_x,             y - h_cat)
+        tmp_desc.drawOn(c, desc_x,            y - h_desc)
+        tmp_just.drawOn(c, just_x,            y - h_just)
         c.setFont("Helvetica", 10)
-        c.drawRightString(width - inch, y - (row_h/2) + 4, f"${row.get('total', 0):,.2f}")
+        c.drawRightString(width - right_margin, y - (row_h/2) + 4, f"${row.get('total',0):,.2f}")
         y -= (row_h + 6)
 
     # --- Claim Package pagination (replace your old block) ---
