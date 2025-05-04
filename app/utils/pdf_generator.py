@@ -5,6 +5,8 @@ from reportlab.lib.units import inch
 from reportlab.lib.utils import ImageReader
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
+from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate, Paragraph
+from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph
 import xml.sax.saxutils as saxutils
 import boto3
@@ -94,42 +96,46 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         c.line(cat_x, y2, width - inch + 0.1*inch, y2)
         return y2 - 0.2*inch
     
-    # === PAGE 1+: Claim Package (with pagination) ===
-    # 1) Escape & wrap the entire claim_text into a Paragraph
+    # === PAGE 1+: Claim Package (with pagination) via Platypus ===
+    # 1) Escape your text exactly as before
     esc = saxutils.escape(claim_text or "") \
         .replace('\t', '&nbsp;'*4) \
         .replace('\r\n', '\n') \
         .replace('\n', '<br/>')
-    para = Paragraph(esc, body_style)
 
-    # 2) Set up your margins & available space
-    left_margin   = inch
-    right_margin  = inch
-    top_margin    = 3 * inch
-    bottom_margin = inch
+    # 2) Build a small Platypus document around your existing canvas
+    #    (it will stream into the same PDF you're already writing to)
+    doc = BaseDocTemplate(
+        c._filename,              # use the same file your canvas is writing to
+        pagesize=(width, height),
+        leftMargin=inch,
+        rightMargin=inch,
+        topMargin=3*inch,
+        bottomMargin=inch
+    )
 
-    y_start = height - top_margin
-    avail_w = width - left_margin - right_margin
-    avail_h = y_start - bottom_margin
+    # 3) Define a single frame that occupies your full body area
+    frame = Frame(
+        inch,                     # left
+        inch,                     # bottom
+        width - 2*inch,           # width
+        height - 4*inch,          # height = total - (topMargin + bottomMargin)
+        id="claim_frame"
+    )
 
-    # 3) Split the Paragraph into page-sized chunks
-    chunks = para.split(avail_w, avail_h)
+    # 4) Attach a PageTemplate that uses your existing header function
+    tpl = PageTemplate(
+        id="ClaimPackage",
+        frames=[frame],
+        onPage=start_claim_page   # this draws your logo/title on *every* page
+    )
+    doc.addPageTemplates([tpl])
 
-    # 4) Draw each chunk, paginating when necessary
-    y = y_start
-    start_claim_page()  # draw header/logo on first page
-    for chunk in chunks:
-        w, h = chunk.wrap(avail_w, avail_h)
-        # if it won't fit, start a new page
-        if y - h < bottom_margin:
-            c.showPage()
-            start_claim_page()  # redraw header/logo
-            y = y_start
-        # draw the chunk at current cursor
-        chunk.drawOn(c, left_margin, y - h)
-        # move cursor down
-        y -= h
-        avail_h = y - bottom_margin
+    # 5) Create the “story” of flowables: just one big Paragraph
+    story = [Paragraph(esc, body_style)]
+
+    # 6) Build it! Platypus will split the Paragraph into as many pages as needed.
+    doc.build(story)
     
     # === PAGE 2+: Contents Estimate ===
     start_contents_page(True)
