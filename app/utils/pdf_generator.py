@@ -132,7 +132,7 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     page_height = top_margin + full_text_height + bottom_margin
 
     # 3) Recreate your Canvas with that custom height
-    c = canvas.Canvas(output_path, pagesize=(width, page_height))
+    c = canvas.Canvas(pdf_path, pagesize=(width, page_height))
 
     # 4) Draw header/logo once at the top
     start_claim_page()
