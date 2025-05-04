@@ -35,6 +35,25 @@ just_style = ParagraphStyle(
 )
             
 def generate_pdf(logo_path, client_name, claim_text, estimate_data):
+
+    def start_contents_page(include_title: bool):
+        c.setFillColor(bg_color)
+        c.rect(0, 0, width, height, fill=1, stroke=0)
+        c.setFillColor(text_color)
+        try:
+            img = ImageReader(logo_path)
+            c.drawImage(
+                img,
+                0.5*inch, height - 1.4*inch,
+                width=3.2*inch, height=1.2*inch,
+                preserveAspectRatio=True
+            )
+        except:
+            pass
+        if include_title:
+            c.setFont("Helvetica-Bold", 20)
+            c.drawCentredString(width/2, height - 1.9*inch, "Contents Estimate")
+
     # 1) Prepare output directory and file path
     out_dir = "app/finalized_pdfs"
     os.makedirs(out_dir, exist_ok=True)
