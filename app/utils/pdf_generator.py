@@ -119,6 +119,59 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         chunk.drawOn(c, left_margin, y_cursor - h)
         y_cursor -= h
 
+    # 6) Contents Estimate (new page)
+    c.showPage()
+    start_contents_page(True)
+    y = height - 2.5*inch
+
+    # metadata
+    for label in ["claimant","property","estimator","estimate_type","date_entered","date_completed"]:
+        text = f"{label.replace('_',' ').title()}: "
+        val  = estimate_data.get(label, "")
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(left_margin, y, text)
+        lw = c.stringWidth(text, "Helvetica-Bold", 12)
+        c.setFont("Helvetica", 12)
+        c.drawString(left_margin + lw, y, val)
+        y -= 0.3*inch
+
+    # grand total
+    y -= 0.3*inch
+    total_sum = sum(r.get("total",0) for r in estimate_data.get("rows",[]))
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(width/2, y, f"Total Replacement Cost Value: ${total_sum:,.2f}")
+    y -= 0.6*inch
+
+    # table + pagination
+    y = draw_table_headers(y)
+    for row in estimate_data.get("rows", []):
+        esc_j = (saxutils.escape(row.get("justification","—"))
+                   .replace('\t','&nbsp;'*4)
+                   .replace('\r\n','\n')
+                   .replace('\n','<br/>'))
+
+        tmp_cat  = Paragraph(row.get("category","—"), body_style)
+        tmp_desc = Paragraph(saxutils.escape(row.get("description","—")), body_style)
+        tmp_just = Paragraph(esc_j, body_style)
+
+        w_cat, h_cat   = tmp_cat.wrap(cat_w,  y - bottom_margin)
+        w_desc, h_desc = tmp_desc.wrap(desc_w, y - bottom_margin)
+        w_just, h_just = tmp_just.wrap(just_w, y - bottom_margin)
+        row_h = max(h_cat, h_desc, h_just, 14)
+
+        if y - row_h < bottom_margin:
+            c.showPage()
+            start_contents_page(False)
+            y = height - 1.9*inch
+            y = draw_table_headers(y)
+
+        tmp_cat.drawOn(c,  cat_x,             y - h_cat)
+        tmp_desc.drawOn(c, desc_x,            y - h_desc)
+        tmp_just.drawOn(c, just_x,            y - h_just)
+        c.setFont("Helvetica", 10)
+        c.drawRightString(width - right_margin, y - (row_h/2) + 4, f"${row.get('total',0):,.2f}")
+        y -= (row_h + 6)
+
     # === PAGE 2+: Contents Estimate ===
     start_contents_page(True)
         
