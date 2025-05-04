@@ -26,6 +26,7 @@ body_style = ParagraphStyle(
     fontSize=12,
     leading=16,
     textColor=text_color,
+    allowSplitting=True,    # ← add this
     allowWidows=1,
     allowOrphans=1,
 )
@@ -102,13 +103,20 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     
 
     # === PAGE 1+: Claim Package (with pagination) ===
-    # 1) Escape & wrap the entire claim_text into a Paragraph
+    # 1) Escape & turn blank lines into true <para> breaks
     esc = saxutils.escape(claim_text or "")
+    # wherever there were two newlines, close+open para
+    esc = esc.replace('\r\n\r\n', '</para><para>')
+    esc = esc.replace('\n\n',    '</para><para>')         # in case of lone '\n\n'
+    # then do your other replacements on single newlines & tabs
     esc = (
-        esc.replace('\t', '&nbsp;'*4)
-           .replace('\r\n', '\n')
-           .replace('\n', '<br/>')
+        esc
+        .replace('\t', '&nbsp;'*4)
+        .replace('\r\n', '\n')
+        .replace('\n', '<br/>')
     )
+    # wrap the whole thing in a <para> block so split() can see them
+    esc = f'<para>{esc}</para>'
     para = Paragraph(esc, body_style)
 
     # 2) Set up your margins & compute the body area
