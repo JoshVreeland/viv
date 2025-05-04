@@ -103,21 +103,25 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     
 
     # === PAGE 1+: Claim Package (with pagination) ===
-    # 1) Escape & turn blank lines into true <para> breaks
+    # 1) Escape & force real paragraph breaks
     esc = saxutils.escape(claim_text or "")
-    # wherever there were two newlines, close+open para
+
+    # wherever there were two newlines, break into separate <para> blocks
     esc = esc.replace('\r\n\r\n', '</para><para>')
-    esc = esc.replace('\n\n',    '</para><para>')         # in case of lone '\n\n'
-    # then do your other replacements on single newlines & tabs
+    esc = esc.replace('\n\n',     '</para><para>')
+
+    # now handle tabs and single-line breaks
     esc = (
         esc
-        .replace('\t', '&nbsp;'*4)
         .replace('\r\n', '\n')
+        .replace('\t', '&nbsp;'*4)
         .replace('\n', '<br/>')
     )
-    # wrap the whole thing in a <para> block so split() can see them
+
+    # wrap the whole thing so .split() can see the <para> boundaries
     esc = f'<para>{esc}</para>'
-    para = Paragraph(esc, body_style)
+
+    para = Paragraph(esc, body_style) 
 
     # 2) Set up your margins & compute the body area
     left_margin   = inch
