@@ -1,4 +1,3 @@
-def generate_pdf(logo_path, client_name, claim_text, estimate_data):
 import os
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import LETTER  
@@ -34,6 +33,8 @@ body_style = ParagraphStyle(
 just_style = ParagraphStyle(
     name="Justification", parent=body_style, fontSize=10, leading=14
 )
+
+def generate_pdf(logo_path, client_name, claim_text, estimate_data):
             
     # 1) Prepare output path
     out_dir = "app/finalized_pdfs"
