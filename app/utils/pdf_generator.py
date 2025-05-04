@@ -52,22 +52,27 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     bottom_margin = inch
     total_x = width - inch           # ← add this
     
-    def start_claim_page():
-        c.setFillColor(bg_color)
-        c.rect(0, 0, width, height, fill=1, stroke=0)
-        c.setFillColor(text_color)
+    def start_claim_page(canvas, doc):
+        # full-page background
+        canvas.setFillColor(bg_color)
+        canvas.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, fill=1, stroke=0)
+
+        canvas.setFillColor(text_color)
+        # logo
         try:
             img = ImageReader(logo_path)
-            c.drawImage(
+            canvas.drawImage(
                 img,
-                0.5*inch, height - 1.4*inch,
+                0.5*inch, PAGE_HEIGHT - 1.4*inch,
                 width=3.2*inch, height=1.2*inch,
                 preserveAspectRatio=True
             )
         except:
             pass
-        c.setFont("Helvetica-Bold", 20)
-        c.drawCentredString(width/2, height - 2.5*inch, "Claim Package")
+
+        # title
+        canvas.setFont("Helvetica-Bold", 20)
+        canvas.drawCentredString(PAGE_WIDTH/2, PAGE_HEIGHT - 2.5*inch, "Claim Package")
     
     def start_contents_page(include_title: bool):
         c.setFillColor(bg_color)
@@ -102,52 +107,43 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         return y2 - 0.2*inch
     
 
-    # === PAGE 1+: Claim Package (with pagination) ===
-    # 1) Escape & force real paragraph breaks
+    # === PAGE 1 Pageless Claim Package ===
+    # 1) Escape & wrap the entire claim_text into a Paragraph
     esc = saxutils.escape(claim_text or "")
-
-    # wherever there were two newlines, break into separate <para> blocks
-    esc = esc.replace('\r\n\r\n', '</para><para>')
-    esc = esc.replace('\n\n',     '</para><para>')
-
-    # now handle tabs and single-line breaks
     esc = (
-        esc
-        .replace('\r\n', '\n')
-        .replace('\t', '&nbsp;'*4)
-        .replace('\n', '<br/>')
+        esc.replace('\t', '&nbsp;'*4)
+           .replace('\r\n', '\n')
+           .replace('\n', '<br/>')
     )
+    para = Paragraph(esc, body_style)
 
-    # wrap the whole thing so .split() can see the <para> boundaries
-    esc = f'<para>{esc}</para>'
-
-    para = Paragraph(esc, body_style) 
-
-    # 2) Set up your margins & compute the body area
+    # 2) Compute margins & full paragraph height
     left_margin   = inch
     right_margin  = inch
     top_margin    = 3 * inch
     bottom_margin = inch
 
-    y_top       = height - top_margin
-    body_width  = width  - left_margin - right_margin
-    body_height = y_top   - bottom_margin
+    body_width = width - left_margin - right_margin
 
-    # 3) Split the Paragraph into page-sized chunks
-    chunks = para.split(body_width, body_height)
+    # Asking ReportLab: "If I had infinite height, how tall would this para be?"
+    _, full_text_height = para.wrap(body_width, 1e6)
 
-    # 4) Draw each chunk, paginating when necessary
-    start_claim_page()      # draw header/logo on the very first page
-    y_cursor = y_top
-    for idx, chunk in enumerate(chunks):
-        if idx > 0:
-            c.showPage()
-            start_claim_page()      # redraw header/logo on new page
-            y_cursor = y_top
+    # Total page height = top + text + bottom
+    page_height = top_margin + full_text_height + bottom_margin
 
-        w, h = chunk.wrap(body_width, body_height)
-        chunk.drawOn(c, left_margin, y_cursor - h)
-        y_cursor -= h
+    # 3) Recreate your Canvas with that custom height
+    c = canvas.Canvas(output_path, pagesize=(width, page_height))
+
+    # 4) Draw header/logo once at the top
+    start_claim_page()
+
+    # 5) Draw the paragraph in one go
+    #    Y-origin for drawOn = page_height - top_margin - full_text_height
+    para.drawOn(
+        c,
+        left_margin,
+        page_height - top_margin - full_text_height
+    )
     
     # === PAGE 2+: Contents Estimate ===
     start_contents_page(True)
