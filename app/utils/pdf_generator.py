@@ -34,6 +34,19 @@ just_style = ParagraphStyle(
     name="Justification", parent=body_style, fontSize=10, leading=14
 )
 
+estimate_body_style = ParagraphStyle(
+    name="EstimateBody",
+    parent=body_style,
+    fontSize=body_style.fontSize - 2,   # 12 → 10
+    leading=body_style.leading - 2,     # 16 → 14
+)
+estimate_just_style = ParagraphStyle(
+    name="EstimateJust",
+    parent=just_style,
+    fontSize=just_style.fontSize - 2,   # 10 → 8
+    leading=just_style.leading - 2,     # 14 → 12
+)
+
 def generate_pdf(logo_path, client_name, claim_text, estimate_data):
             
     # 1) Prepare output path
@@ -69,7 +82,7 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         except:
             pass
         c.setFont("Helvetica-Bold", 20)
-        c.drawCentredString(width/2, height - 2.5*inch, "Claim Package")
+        c.drawCentredString(width/2, height - 1.9*inch, "Claim Package")
 
     def start_contents_page(include_title: bool):
         c.setFillColor(colors.HexColor("#FEFDF9"))
@@ -150,9 +163,9 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
                    .replace('\r\n','\n')
                    .replace('\n','<br/>'))
 
-        tmp_cat  = Paragraph(row.get("category","—"), body_style)
-        tmp_desc = Paragraph(saxutils.escape(row.get("description","—")), body_style)
-        tmp_just = Paragraph(esc_j, body_style)
+    +    tmp_cat  = Paragraph(row.get("category","—"), estimate_body_style)
+    +    tmp_desc = Paragraph(saxutils.escape(row.get("description","—")), estimate_body_style)
+    +    tmp_just = Paragraph(esc_j, estimate_just_style)
 
         w_cat, h_cat   = tmp_cat.wrap(cat_w,  y - bottom_margin)
         w_desc, h_desc = tmp_desc.wrap(desc_w, y - bottom_margin)
