@@ -163,9 +163,9 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
                    .replace('\r\n','\n')
                    .replace('\n','<br/>'))
 
-    +    tmp_cat  = Paragraph(row.get("category","—"), estimate_body_style)
-    +    tmp_desc = Paragraph(saxutils.escape(row.get("description","—")), estimate_body_style)
-    +    tmp_just = Paragraph(esc_j, estimate_just_style)
+         tmp_cat  = Paragraph(row.get("category","—"), estimate_body_style)
+         tmp_desc = Paragraph(saxutils.escape(row.get("description","—")), estimate_body_style)
+         tmp_just = Paragraph(esc_j, estimate_just_style)
 
         w_cat, h_cat   = tmp_cat.wrap(cat_w,  y - bottom_margin)
         w_desc, h_desc = tmp_desc.wrap(desc_w, y - bottom_margin)
