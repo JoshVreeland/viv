@@ -38,7 +38,7 @@ def generate_excel(pdf_path: str,
     dark_fmt        = common_fmt(bg_color='#3B4232')
     grey_bold_fmt   = common_fmt(bg_color='#D4D4C9', bold=True, font_size=14, align='center', valign='vcenter', text_wrap=True, border=1)
     header_fmt      = common_fmt(bg_color='#3d4336', font_color='#FFFFFF', text_wrap=True, align='center', valign='vcenter', border=1)
-    top_fmt         = common_fmt(bg_color='#FFFDFA', valign='top', border=0)
+    top_fmt         = common_fmt(bg_color='#FFFDFA', align='left', valign='top', border=0)
 
     # === SHEET 1: Claim Package (unchanged) ===
     ws1 = wb.add_worksheet('Claim Package')
