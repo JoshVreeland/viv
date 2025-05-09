@@ -6,6 +6,7 @@ from reportlab.lib.utils import ImageReader
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate, Paragraph
+from reportlab.platypus import Preformatted
 from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph
 import xml.sax.saxutils as saxutils
@@ -110,27 +111,37 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         return y2 - 0.2*inch
 
     # 5) Claim Package pagination
-    esc = saxutils.escape(claim_text or "")
-    esc = (esc.replace('\t', '&nbsp;'*4)
-              .replace('\r\n', '\n')
-              .replace('\n', '<br/>'))
-    para = Paragraph(esc, body_style)
 
-    y_cursor    = height - top_margin
-    body_width  = width - left_margin - right_margin
-    body_height = y_cursor - bottom_margin
+    # ——— Claim Package with Preformatted & correct spacing ———
+    txt = claim_text or ""
+    txt = txt.replace('\r\n','\n').replace('\t','    ')
+    pre = Preformatted(txt, body_style)
 
-    chunks = para.split(body_width, body_height)
+    left_margin   = inch
+    right_margin  = inch
+    bottom_margin = inch
+
+    # compute the “title Y” and then a 0.5″ gap below it
+    title_y   = height - 1.9 * inch
+    gap       = 0.5 * inch
+    y_start   = title_y - gap
+
+    avail_w = width  - left_margin - right_margin
+    avail_h = y_start - bottom_margin
+
+    chunks = pre.split(avail_w, avail_h)
 
     start_claim_page()
+    y = y_start
     for chunk in chunks:
-        w, h = chunk.wrap(body_width, body_height)
-        if y_cursor - h < bottom_margin:
+        w, h = chunk.wrap(avail_w, avail_h)
+        if y - h < bottom_margin:
             c.showPage()
             start_claim_page()
-            y_cursor = height - top_margin
-        chunk.drawOn(c, left_margin, y_cursor - h)
-        y_cursor -= h
+            y = y_start
+        chunk.drawOn(c, left_margin, y - h)
+        y -= h
+    # ——— end Claim Package ———
 
     # 6) Contents Estimate (new page)
     c.showPage()

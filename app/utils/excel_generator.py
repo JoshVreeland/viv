@@ -2,6 +2,7 @@ from PIL import Image
 import os
 import xlsxwriter
 import boto3
+from openpyxl.styles import Border, Side, Alignment
 
 
 def generate_excel(pdf_path: str,
@@ -24,13 +25,17 @@ def generate_excel(pdf_path: str,
 
     # === COMMON FORMATS ===
     common_fmt = lambda **kw: wb.add_format({
-        'font_name': 'Times New Roman',
+        'font_name': 'Arial',
         'align': 'center',
         'valign': 'vcenter',
         'text_wrap': True,
         **kw
     })
-
+    
+    # define our thick border and an “empty” border
+    thick = Side(border_style="thick", color="000000")
+    none  = Side(border_style=None)
+    
     bg_fmt          = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, border=0)
     border_fmt      = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, border=1)
     currency_fmt    = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, num_format='$#,##0.00', border=1)
@@ -38,13 +43,23 @@ def generate_excel(pdf_path: str,
     dark_fmt        = common_fmt(bg_color='#3B4232')
     grey_bold_fmt   = common_fmt(bg_color='#D4D4C9', bold=True, font_size=14, align='center', valign='vcenter', text_wrap=True, border=1)
     header_fmt      = common_fmt(bg_color='#3d4336', font_color='#FFFFFF', text_wrap=True, align='center', valign='vcenter', border=1)
-    top_fmt         = common_fmt(bg_color='#FFFDFA', align='left', valign='top', border=0)
+    top_fmt         = common_fmt(bg_color='#FFFDFA', text_wrap=True, indent=1,  align='left', valign='top', border=0)
 
     # === SHEET 1: Claim Package (unchanged) ===
     ws1 = wb.add_worksheet('Claim Package')
     for r in range(100):
         for c in range(30):
             ws1.write_blank(r, c, None, bg_fmt)
+
+    # apply only to the outer edges of A1:H14
+    for row in ws1.iter_rows(min_row=1, max_row=14, min_col=1, max_col=8):
+        for cell in row:
+            cell.border = Border(
+                left   = thick if cell.column == 1 else none,
+                right  = thick if cell.column == 8 else none,
+                top    = thick if cell.row    == 1 else none,
+                bottom = thick if cell.row    == 14 else none,
+            )
     ws1.hide_gridlines(2)
     ws1.set_tab_color('#FFFDFA')
     ws1.set_column('A:H', 15)
@@ -53,7 +68,7 @@ def generate_excel(pdf_path: str,
             ws1.write_blank(r, c, None, bg_fmt)
     for r in range(9, 15):
         ws1.set_row(r, 20, bg_fmt)
-    ws1.merge_range('A1:H15', '', bg_fmt)
+    ws1.merge_range('A1:H14', '', bg_fmt)
     ws1.insert_image('A1', logo_path, {'x_scale': 0.39, 'y_scale': 0.36})
     ws1.merge_range('A16:H61', claim_text, top_fmt)
     ws1.set_column('AA:XFD', None, None, { 'hidden': True })
