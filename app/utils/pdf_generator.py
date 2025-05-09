@@ -112,8 +112,9 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
 
     # 5) Claim Package pagination
 
-    # ——— Claim Package with Preformatted & correct spacing ———
+    # ——— Claim Package with Preformatted ———
     txt = claim_text or ""
+    # normalize newlines & tabs
     txt = txt.replace('\r\n','\n').replace('\t','    ')
     pre = Preformatted(txt, body_style)
 
@@ -121,12 +122,12 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     right_margin  = inch
     bottom_margin = inch
 
-    # compute the “title Y” and then a 0.5″ gap below it
-    title_y   = height - 1.9 * inch
-    gap       = 0.5 * inch
-    y_start   = title_y - gap
+    # match title‐to‐logo gap (1.9″ from top) and then 0.5″ to text
+    title_y = height - 1.9*inch
+    gap     = 0.5*inch
+    y_start = title_y - gap
 
-    avail_w = width  - left_margin - right_margin
+    avail_w = width - left_margin - right_margin
     avail_h = y_start - bottom_margin
 
     chunks = pre.split(avail_w, avail_h)

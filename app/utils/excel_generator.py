@@ -36,8 +36,8 @@ def generate_excel(pdf_path: str,
     thick = Side(border_style="thick", color="000000")
     none  = Side(border_style=None)
     
-    bg_fmt          = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, border=6)
-    border_fmt      = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, border=1)
+    bg_fmt          = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, border=0)
+    border_fmt      = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, border=4)
     currency_fmt    = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, num_format='$#,##0.00', border=1)
     yellow_bold_fmt = common_fmt(bg_color='#F2CC0C', bold=True, align='center', valign='vcenter', text_wrap=True, border=1)
     dark_fmt        = common_fmt(bg_color='#3B4232')
@@ -58,10 +58,29 @@ def generate_excel(pdf_path: str,
         for c in range(8):
             ws1.write_blank(r, c, None, bg_fmt)
     for r in range(9, 15):
-        ws1.set_row(r, 20, bg_fmt)
+        ws1.set_row(r, 20, border_fmt)
     ws1.merge_range('A1:H14', '', bg_fmt)
     ws1.insert_image('A1', logo_path, {'x_scale': 0.39, 'y_scale': 0.36})
-    ws1.merge_range('A16:H61', claim_text, top_fmt)
+
+
+    # 2) build your value with per-line NBSP indents
+    lines = claim_text.split("\n")
+    out = []
+    for line in lines:
+        # count leading tabs (or spaces) in the raw text
+        count_tabs = 0
+        while line.startswith("\t"):
+            line = line[1:]
+            count_tabs += 1
+        # for each tab, insert 4 non-breaking spaces
+        if count_tabs:
+            line = ("\u00A0" * 4 * count_tabs) + line
+        out.append(line)
+
+    value = "\n".join(out)
+
+    # 3) write that into the merged cell
+    ws1.merge_range('A16:H61', value, top_fmt)
     ws1.set_column('AA:XFD', None, None, { 'hidden': True })
 
     # === SHEET 2: Contents Estimate (your specific tweaks) ===
