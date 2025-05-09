@@ -30,7 +30,9 @@ body_style = ParagraphStyle(
     allowSplitting=True,    # ← add this
     allowWidows=1,
     allowOrphans=1,
+    wordWrap='LTR',          # ← break on spaces
 )
+
 just_style = ParagraphStyle(
     name="Justification", parent=body_style, fontSize=10, leading=14
 )
@@ -112,22 +114,20 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
 
     # 5) Claim Package pagination
 
-    # ——— Claim Package with Preformatted ———
-    txt = claim_text or ""
-    # normalize newlines & tabs
-    txt = txt.replace('\r\n','\n').replace('\t','    ')
+    # ——— Claim Package with wrapping & whitespace preserved ———
+    txt = (claim_text or "").replace('\r\n','\n').replace('\t','    ')
     pre = XPreformatted(txt, body_style)
 
     left_margin   = inch
     right_margin  = inch
     bottom_margin = inch
 
-    # match title‐to‐logo gap (1.9″ from top) and then 0.5″ to text
+    # line your text up 0.5" below the title (which sits at 1.9" from top)
     title_y = height - 1.9*inch
     gap     = 0.5*inch
     y_start = title_y - gap
 
-    avail_w = width - left_margin - right_margin
+    avail_w = width  - left_margin - right_margin
     avail_h = y_start - bottom_margin
 
     chunks = pre.split(avail_w, avail_h)
