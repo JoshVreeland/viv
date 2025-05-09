@@ -59,7 +59,7 @@ def generate_excel(pdf_path: str,
             ws1.write_blank(r, c, None, bg_fmt)
     for r in range(9, 15):
         ws1.set_row(r, 20, border_fmt)
-    ws1.merge_range('A1:H14', '', bg_fmt)
+    ws1.merge_range('A1:H14', '', border_fmt)
     ws1.insert_image('A1', logo_path, {'x_scale': 0.39, 'y_scale': 0.36})
 
 
