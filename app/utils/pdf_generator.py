@@ -144,7 +144,7 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     avail_w = width  - left_margin - right_margin
     avail_h = y_start - bottom_margin
 
-    chunks = pre.split(avail_w, avail_h)
+    chunks = para.split(avail_w, avail_h)
 
     start_claim_page()
     y = y_start
