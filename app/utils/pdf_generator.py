@@ -29,10 +29,11 @@ body_style = ParagraphStyle(
     fontSize=12,
     leading=16,
     textColor=text_color,
-    allowSplitting=True,    # ← add this
+    allowSplitting=True,    # still allow paragraph → next page splits
+    splitLongWords=False,   # ← do NOT break words in half
     allowWidows=1,
     allowOrphans=1,
-    wordWrap='LTR',          # ← break on spaces
+    wordWrap='LTR',         # wrap at spaces, not mid-word
 )
 
 just_style = ParagraphStyle(
@@ -116,36 +117,31 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
 
     # 5) Claim Package pagination
 
-    # ——— Claim Package with wrapping & whitespace preserved ———
+    # ——— Claim Package with real wrapping & preserved whitespace ———
 
-    def prepare_wrapped_indented_text(txt):
-        escaped = saxutils.escape(txt or "")
-        lines = escaped.split('\n')
-        processed_lines = []
-        for line in lines:
-            leading_spaces = len(line) - len(line.lstrip(' '))
-            nbsp_prefix = '&nbsp;' * leading_spaces
-            processed_lines.append(nbsp_prefix + line.lstrip(' '))
-        return '<br/>'.join(processed_lines)
+    # 1) Normalize your raw text (keep bullets & leading tabs)
+    txt = claim_text or ""
+    txt = txt.replace('\r\n', '\n').replace('\t', '    ')
 
-    wrapped_text = prepare_wrapped_indented_text(claim_text)
-    para = Paragraph(wrapped_text, body_style)
-    chunks = para.split(avail_w, avail_h)
+    # 2) Create the XPreformatted flowable (wraps at your width, preserves spaces)
+    pre = XPreformatted(txt, body_style)
 
+    # 3) Margins & where text starts (0.5" below the title at 1.9" from top)
     left_margin   = inch
     right_margin  = inch
     bottom_margin = inch
 
-    # line your text up 0.5" below the title (which sits at 1.9" from top)
-    title_y = height - 1.9*inch
-    gap     = 0.5*inch
-    y_start = title_y - gap
+    title_y = height - 1.9 * inch
+    y_start = title_y - 0.5 * inch
 
+    # **THIS** must come before you split:
     avail_w = width  - left_margin - right_margin
     avail_h = y_start - bottom_margin
 
-    chunks = para.split(avail_w, avail_h)
+    # 4) Split into page-sized chunks
+    chunks = pre.split(avail_w, avail_h)
 
+    # 5) Draw them, paginating when you run out of room
     start_claim_page()
     y = y_start
     for chunk in chunks:
@@ -156,6 +152,7 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
             y = y_start
         chunk.drawOn(c, left_margin, y - h)
         y -= h
+
     # ——— end Claim Package ———
 
     # 6) Contents Estimate (new page)
