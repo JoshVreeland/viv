@@ -36,7 +36,7 @@ def generate_excel(pdf_path: str,
     thick = Side(border_style="thick", color="000000")
     none  = Side(border_style=None)
     
-    bg_fmt          = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, border=0)
+    bg_fmt          = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, border=6)
     border_fmt      = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, border=1)
     currency_fmt    = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, num_format='$#,##0.00', border=1)
     yellow_bold_fmt = common_fmt(bg_color='#F2CC0C', bold=True, align='center', valign='vcenter', text_wrap=True, border=1)
@@ -51,15 +51,6 @@ def generate_excel(pdf_path: str,
         for c in range(30):
             ws1.write_blank(r, c, None, bg_fmt)
 
-    # apply only to the outer edges of A1:H14
-    for row in ws1.iter_rows(min_row=1, max_row=14, min_col=1, max_col=8):
-        for cell in row:
-            cell.border = Border(
-                left   = thick if cell.column == 1 else none,
-                right  = thick if cell.column == 8 else none,
-                top    = thick if cell.row    == 1 else none,
-                bottom = thick if cell.row    == 14 else none,
-            )
     ws1.hide_gridlines(2)
     ws1.set_tab_color('#FFFDFA')
     ws1.set_column('A:H', 15)
