@@ -6,7 +6,7 @@ from reportlab.lib.utils import ImageReader
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate, Paragraph
-from reportlab.platypus import Preformatted
+from reportlab.platypus import XPreformatted
 from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph
 import xml.sax.saxutils as saxutils
@@ -116,7 +116,7 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     txt = claim_text or ""
     # normalize newlines & tabs
     txt = txt.replace('\r\n','\n').replace('\t','    ')
-    pre = Preformatted(txt, body_style)
+    pre = XPreformatted(txt, body_style)
 
     left_margin   = inch
     right_margin  = inch

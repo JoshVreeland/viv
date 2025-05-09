@@ -37,7 +37,7 @@ def generate_excel(pdf_path: str,
     none  = Side(border_style=None)
     
     bg_fmt          = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, border=0)
-    border_fmt      = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, border=4)
+    border_fmt      = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, border=5)
     currency_fmt    = common_fmt(bg_color='#FFFDFA', align='center', valign='vcenter', text_wrap=True, num_format='$#,##0.00', border=1)
     yellow_bold_fmt = common_fmt(bg_color='#F2CC0C', bold=True, align='center', valign='vcenter', text_wrap=True, border=1)
     dark_fmt        = common_fmt(bg_color='#3B4232')
