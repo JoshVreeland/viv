@@ -6,7 +6,9 @@ from reportlab.lib.utils import ImageReader
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate, Paragraph
+from reportlab.platypus import Paragraph
 from reportlab.platypus import XPreformatted
+from xml.sax import saxutils
 from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph
 import xml.sax.saxutils as saxutils
@@ -115,8 +117,20 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     # 5) Claim Package pagination
 
     # ——— Claim Package with wrapping & whitespace preserved ———
-    txt = (claim_text or "").replace('\r\n','\n').replace('\t','    ')
-    pre = XPreformatted(txt, body_style)
+
+    def prepare_wrapped_indented_text(txt):
+        escaped = saxutils.escape(txt or "")
+        lines = escaped.split('\n')
+        processed_lines = []
+        for line in lines:
+            leading_spaces = len(line) - len(line.lstrip(' '))
+            nbsp_prefix = '&nbsp;' * leading_spaces
+            processed_lines.append(nbsp_prefix + line.lstrip(' '))
+        return '<br/>'.join(processed_lines)
+
+    wrapped_text = prepare_wrapped_indented_text(claim_text)
+    para = Paragraph(wrapped_text, body_style)
+    chunks = para.split(avail_w, avail_h)
 
     left_margin   = inch
     right_margin  = inch
@@ -193,7 +207,6 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         tmp_cat.drawOn(c,  cat_x,             y - h_cat)
         tmp_desc.drawOn(c, desc_x,            y - h_desc)
         tmp_just.drawOn(c, just_x,            y - h_just)
-        c.setFont("Helvetica", 10)
         c.drawRightString(width - right_margin, y - (row_h/2) + 4, f"${row.get('total',0):,.2f}")
         y -= (row_h + 6)
     
