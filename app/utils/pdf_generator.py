@@ -37,7 +37,7 @@ body_style = ParagraphStyle(
 )
 
 just_style = ParagraphStyle(
-    name="Justification", parent=body_style, fontSize=10, leading=14
+    name="Justification", parent=body_style, fontSize=12, leading=14
 )
 
 estimate_body_style = ParagraphStyle(
@@ -117,30 +117,30 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
 
     # 5) Claim Package pagination
 
-    # ——— Claim Package with real wrapping & preserved whitespace ———
-
+    # ——— Claim Package with real wrapping & preserved whitespace ———   
+    
     # 1) Normalize your raw text (keep bullets & leading tabs)
     txt = claim_text or ""
     txt = txt.replace('\r\n', '\n').replace('\t', '    ')
-
+        
     # 2) Create the XPreformatted flowable (wraps at your width, preserves spaces)
     pre = XPreformatted(txt, body_style)
-
+            
     # 3) Margins & where text starts (0.5" below the title at 1.9" from top)
     left_margin   = inch
     right_margin  = inch
     bottom_margin = inch
-
+        
     title_y = height - 1.9 * inch
     y_start = title_y - 0.5 * inch
-
+    
     # **THIS** must come before you split:
     avail_w = width  - left_margin - right_margin
     avail_h = y_start - bottom_margin
-
+        
     # 4) Split into page-sized chunks
     chunks = pre.split(avail_w, avail_h)
-
+        
     # 5) Draw them, paginating when you run out of room
     start_claim_page()
     y = y_start
@@ -149,10 +149,10 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         if y - h < bottom_margin:
             c.showPage()
             start_claim_page()
-            y = y_start
+            y = y_start   
         chunk.drawOn(c, left_margin, y - h)
         y -= h
-
+    
     # ——— end Claim Package ———
 
     # 6) Contents Estimate (new page)
@@ -174,7 +174,7 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     # grand total
     y -= 0.3*inch
     total_sum = sum(r.get("total",0) for r in estimate_data.get("rows",[]))
-    c.setFont("Helvetica-Bold", 16)
+    c.setFont("Helvetica", 12)
     c.drawCentredString(width/2, y, f"Total Replacement Cost Value: ${total_sum:,.2f}")
     y -= 0.6*inch
 

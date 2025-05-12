@@ -63,20 +63,13 @@ def generate_excel(pdf_path: str,
     ws1.insert_image('A1', logo_path, {'x_scale': 0.39, 'y_scale': 0.36})
 
 
-    # 2) build your value with per-line NBSP indents
+    # 2) build your value by converting every tab into 4 NBSPs
     lines = claim_text.split("\n")
-    out = []
+    out   = []
     for line in lines:
-        # count leading tabs (or spaces) in the raw text
-        count_tabs = 0
-        while line.startswith("\t"):
-            line = line[1:]
-            count_tabs += 1
-        # for each tab, insert 4 non-breaking spaces
-        if count_tabs:
-            line = ("\u00A0" * 4 * count_tabs) + line
+        # replace every tab (before or after the “1.”) with 4 non-breaking spaces
+        line = line.replace("\t", "\u00A0" * 4)
         out.append(line)
-
     value = "\n".join(out)
 
     # 3) write that into the merged cell
