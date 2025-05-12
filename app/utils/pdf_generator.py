@@ -22,46 +22,52 @@ from .excel_generator import generate_excel  # relative import
 bg_color = colors.HexColor("#FEFDF9") 
 text_color = colors.HexColor("#3D4335")
         
-    # === STYLES ===
-    styles = getSampleStyleSheet()
-    body_style = ParagraphStyle(
-        name="Body",
-        parent=styles["BodyText"],
-        fontName="Helvetica",
-        fontSize=12,
-        leading=16,
-        textColor=colors.HexColor("#3D4335"),
-        allowSplitting=True,
-        splitLongWords=False,
-        allowWidows=1,
-        allowOrphans=1,
-        wordWrap="LTR",
-    )
-    just_style = ParagraphStyle(
-        name="Justification",
-        parent=body_style,
-        fontSize=12,
-        leading=14,
-    )
-    estimate_body_style = ParagraphStyle(
-        name="EstimateBody",
-        parent=body_style,
-        fontSize=10,
-        leading=14,
-    )
-    estimate_just_style = ParagraphStyle(
-        name="EstimateJust",
-        parent=just_style,
-        fontSize=8,
-        leading=12,
-    )
-    estimate_total_style = ParagraphStyle(
-        name="EstimateTotal",
-        fontName="Helvetica",
-        fontSize=12,
-        leading=14,
-        alignment=TA_RIGHT,
-    )
+# === STYLES ===
+styles = getSampleStyleSheet()
+
+body_style = ParagraphStyle(
+    name="Body",
+    parent=styles["BodyText"],
+    fontName="Helvetica",
+    fontSize=12,
+    leading=16,
+    textColor=colors.HexColor("#3D4335"),
+    allowSplitting=True,
+    splitLongWords=False,
+    allowWidows=1,
+    allowOrphans=1,
+    wordWrap="LTR"
+)
+
+just_style = ParagraphStyle(
+    name="Justification",
+    parent=body_style,
+    fontSize=12,
+    leading=14
+)
+
+estimate_body_style = ParagraphStyle(
+    name="EstimateBody",
+    parent=body_style,
+    fontSize=10,
+    leading=14
+)
+
+estimate_just_style = ParagraphStyle(
+    name="EstimateJust",
+    parent=just_style,
+    fontSize=8,
+    leading=12
+)
+
+estimate_total_style = ParagraphStyle(
+    name="EstimateTotal",
+    parent=body_style,
+    fontName="Helvetica",
+    fontSize=12,
+    leading=14,
+    alignment=TA_RIGHT
+)
 
     def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         # 1) Prepare output path
