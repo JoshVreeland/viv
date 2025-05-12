@@ -85,9 +85,10 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     bottom_margin = inch
 
     # Columns for Contents Estimate
-    cat_x, cat_w = left_margin, 1.5 * inch
+    cat_x,  cat_w  = left_margin, 1.5 * inch
     desc_x, desc_w = cat_x + cat_w + 0.2 * inch, 1.8 * inch
     just_x, just_w = desc_x + desc_w + 0.2 * inch, 1.8 * inch
+    total_x         = width - inch   # ← add this line, so you can use `total_x` below
 
     # Helper functions
     def start_claim_page():
