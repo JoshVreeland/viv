@@ -7,6 +7,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate, Paragraph
 from reportlab.platypus import Paragraph
+from reportlab.lib.enums import TA_RIGHT
 from reportlab.lib.utils import simpleSplit
 from reportlab.platypus import XPreformatted
 from xml.sax import saxutils
@@ -118,113 +119,80 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
 
     # 5) Claim Package pagination
 
-    # ——— Claim Package manual wrap & preserved whitespace ———
-    # 1) Normalize newlines
-    raw_lines = (claim_text or "").replace('\r\n','\n').split('\n')
+    claim_text = (claim_text or "").expandtabs(4)
 
-    # 2) Margins & starting Y
-    left_margin   = inch
-    right_margin  = inch
-    bottom_margin = inch
+    # ——— Claim Package via XPreformatted ———
 
-    title_y = height - 1.9 * inch   # your title baseline
-    y_start = title_y - 0.5 * inch   # 0.5" gap below title
-
-    avail_w = width  - left_margin - right_margin
-    y       = y_start
-
-    # 3) Draw page header
-    start_claim_page()
-
-    # 4) Loop each original line, wrap to sub-lines, then draw
-    for orig in raw_lines:
-        # count & strip leading tabs/spaces
-        indent_chars = 0
-        while orig.startswith('\t') or orig.startswith(' '):
-            indent_chars += 1
-            orig = orig[1:]
-        indent_width = indent_chars * c.stringWidth(' ', body_style.fontName, body_style.fontSize)
-
-        # wrap this line into sub-lines that fit avail_w – indent_width
-        sublines = simpleSplit(orig,
-                                body_style.fontName,
-                                body_style.fontSize,
-                                avail_w - indent_width)
-
-        # draw each wrapped sub-line
-        for sub in sublines:
-            # new page if we’d run past bottom
-            if y < bottom_margin + body_style.leading:
-                c.showPage()
-                start_claim_page()
-                y = y_start
-            # draw text
-            c.setFont(body_style.fontName, body_style.fontSize)
-            c.drawString(left_margin + indent_width, y, sub)
-            y -= body_style.leading
+    claim_text = (claim_text or "").expandtabs(4)
+    pref       = XPreformatted(claim_text, body_style)
+    avail_h    = y - bottom_margin
+    w, h       = pref.wrap(avail_w, avail_h)
+    if h > avail_h:
+        c.showPage()
+        start_claim_page()
+        y        = y_start
+        avail_h  = y - bottom_margin
+        w, h     = pref.wrap(avail_w, avail_h)
+    pref.drawOn(c, left_margin, y - h)
+    y -= h
 
     # ——— end Claim Package ———
 
-    # 6) Contents Estimate (new page)
-    c.showPage()
-    start_contents_page(True)
-    y = height - 2.5*inch
+    # style for the per-row total cell
+    estimate_total_style = ParagraphStyle(
+        name='EstimateTotal',
+        fontName='Helvetica',
+        fontSize=12,
+        leading=14,
+        alignment=TA_RIGHT
+    )
 
-    # metadata
-    for label in ["claimant","property","estimator","estimate_type","date_entered","date_completed"]:
-        text = f"{label.replace('_',' ').title()}: "
-        val  = estimate_data.get(label, "")
-        c.setFont("Helvetica-Bold", 12)
-        c.drawString(left_margin, y, text)
-        lw = c.stringWidth(text, "Helvetica-Bold", 12)
-        c.setFont("Helvetica", 12)
-        c.drawString(left_margin + lw, y, val)
-        y -= 0.3*inch
-
-    # grand total
-    y -= 0.3*inch
-    total_sum = sum(r.get("total",0) for r in estimate_data.get("rows",[]))
-    c.setFont("Helvetica-Bold", 16)
-    c.drawCentredString(width/2, y, f"Total Replacement Cost Value: ${total_sum:,.2f}")
-    y -= 0.6*inch
-
-    # table + pagination
+    # ── table + pagination ──
     y = draw_table_headers(y)
+
+    cat_x   = left_margin
+    desc_x  = cat_x    + cat_w  + 0.2 * inch
+    just_x  = desc_x   + desc_w + 0.2 * inch
+    total_x = just_x   + just_w + 0.2 * inch
+    total_w = width    - right_margin - total_x
+
     for row in estimate_data.get("rows", []):
-        esc_j = (saxutils.escape(row.get("justification","—"))
-                   .replace('\t','&nbsp;'*4)
-                   .replace('\r\n','\n')
-                   .replace('\n','<br/>'))
-
-        tmp_cat  = Paragraph(row.get("category","—"), estimate_body_style)
-        tmp_desc = Paragraph(saxutils.escape(row.get("description","—")), estimate_body_style)
+        tmp_cat  = Paragraph(row.get("category", "—"), estimate_body_style)
+        tmp_desc = Paragraph(
+            saxutils.escape(row.get("description", "—")),
+            estimate_body_style
+        )
+        esc_j = (
+            saxutils.escape(row.get("justification", "—"))
+            .replace('\t', '&nbsp;' * 4)
+            .replace('\r\n', '\n')
+            .replace('\n', '<br/>')
+        )
         tmp_just = Paragraph(esc_j, estimate_just_style)
+        tmp_tot  = Paragraph(f"${row.get('total', 0):,.2f}", estimate_total_style)
 
-        w_cat, h_cat   = tmp_cat.wrap(cat_w,  y - bottom_margin)
+        w_cat,  h_cat  = tmp_cat.wrap(cat_w,   y - bottom_margin)
         w_desc, h_desc = tmp_desc.wrap(desc_w, y - bottom_margin)
         w_just, h_just = tmp_just.wrap(just_w, y - bottom_margin)
-        row_h = max(h_cat, h_desc, h_just, 14)
+        w_tot,  h_tot  = tmp_tot.wrap(total_w, y - bottom_margin)
+
+        row_h = max(h_cat, h_desc, h_just, h_tot)
 
         if y - row_h < bottom_margin:
             c.showPage()
             start_contents_page(False)
-            y = height - 1.9*inch
+            y = height - 1.9 * inch
             y = draw_table_headers(y)
 
-        tmp_cat.drawOn(c,  cat_x,             y - h_cat)
-        tmp_desc.drawOn(c, desc_x,            y - h_desc)
-        tmp_just.drawOn(c, just_x,            y - h_just)
-        # per-row total: regular Helvetica, 12pt
-        c.setFont("Helvetica", 12)
-        c.drawRightString(
-            width - right_margin,
-            y - (row_h/2) + 4,
-            f"${row.get('total',0):,.2f}"
-        )
+        tmp_cat.drawOn(c,   cat_x,   y - h_cat)
+        tmp_desc.drawOn(c,  desc_x,  y - h_desc)
+        tmp_just.drawOn(c,  just_x,  y - h_just)
+        tmp_tot.drawOn(c,   total_x, y - h_tot)
+
         y -= (row_h + 6)
 
     c.save()
-        
+
     # Upload PDF to S3...
     s3 = boto3.client(
         "s3",
