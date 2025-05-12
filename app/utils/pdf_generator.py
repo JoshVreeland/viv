@@ -84,11 +84,12 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     right_margin = inch
     bottom_margin = inch
 
-    # Columns for Contents Estimate
-    cat_x,  cat_w  = left_margin, 1.5 * inch
-    desc_x, desc_w = cat_x + cat_w + 0.2 * inch, 1.8 * inch
-    just_x, just_w = desc_x + desc_w + 0.2 * inch, 1.8 * inch
-    total_x         = width - inch   # ← add this line, so you can use `total_x` below
+
+    # Define column widths for each section
+    cat_x, cat_w = left_margin, 1.5 * inch           # Category column, width 1.5 inches
+    desc_x, desc_w = cat_x + cat_w + 0.2 * inch, 2.5 * inch  # Description column, width 2.5 inches
+    just_x, just_w = desc_x + desc_w + 0.2 * inch, 2.5 * inch  # Justification column, width 2.5 inches
+    total_x = width - right_margin  # Total column, right-aligned
 
     # Helper functions
     def start_claim_page():
@@ -132,12 +133,16 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
 
     def draw_table_headers(y_pos):
         c.setFont("Helvetica-Bold", 12)
+        # Left-aligned headers for Category, Description, and Justification
         c.drawString(cat_x, y_pos, "Category")
         c.drawString(desc_x, y_pos, "Description")
         c.drawString(just_x, y_pos, "Justification")
-        c.drawRightString(width - right_margin, y_pos, "Total")
+        # Right-aligned Total
+        c.drawRightString(total_x, y_pos, "Total")
+    
+        # Draw a line under the headers
         y2 = y_pos - 0.3 * inch
-        c.line(cat_x, y2, width - right_margin + 0.1 * inch, y2)
+        c.line(cat_x, y2, total_x + 0.1 * inch, y2)
         return y2 - 0.2 * inch
 
     # === Claim Package ===
