@@ -147,18 +147,21 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
 
     start_claim_page()
 
+    # ——— Claim Package via Paragraph.split() ———
     claim_text = (claim_text or "").expandtabs(4)
-    pref = XPreformatted(claim_text, body_style)
-    avail_h = y - bottom_margin
-    w, h = pref.wrap(avail_w, avail_h)
-    if h > avail_h:
-        c.showPage()
-        start_claim_page()
-        y = y_start
-        avail_h = y - bottom_margin
-        w, h = pref.wrap(avail_w, avail_h)
-    pref.drawOn(c, left_margin, y - h)
-    y -= h
+    safe       = saxutils.escape(claim_text).replace("\r\n","\n").replace("\n","<br/>")
+    para       = Paragraph(safe, body_style)
+    avail_h    = y - bottom_margin
+    chunks     = para.split(avail_w, avail_h)
+    for i, chunk in enumerate(chunks):
+        if i > 0:
+            c.showPage()
+            start_claim_page()
+            y        = y_start
+            avail_h  = y - bottom_margin
+        w, h = chunk.wrap(avail_w, avail_h)
+        chunk.drawOn(c, left_margin, y - h)
+        y -= h
 
     # === Contents Estimate ===
     c.showPage()
@@ -185,37 +188,46 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     total_x = just_x + just_w + 0.2 * inch
     total_w = width - right_margin - total_x
 
-    for row in estimate_data.get("rows", []):
-        tmp_cat = Paragraph(row.get("category", "—"), estimate_body_style)
-        tmp_desc = Paragraph(saxutils.escape(row.get("description", "—")), estimate_body_style)
-        esc_j = (
-            saxutils.escape(row.get("justification", "—"))
-            .replace("\t", "&nbsp;" * 4)
-            .replace("\r\n", "\n")
-            .replace("\n", "<br/>")
+        # Category
+        p_cat  = Paragraph(row.get("category","—"), estimate_body_style)
+        w_cat, h_cat = p_cat.wrap(cat_w, y - bottom_margin)
+        p_cat.drawOn(c, cat_x, y - h_cat)
+
+        # Description
+        desc_text = (
+            saxutils.escape(row.get("description","—"))
+            .replace("\r\n","\n")
+            .replace("\n","<br/>")
         )
-        tmp_just = Paragraph(esc_j, estimate_just_style)
-        tmp_tot = Paragraph(f"${row.get('total', 0):,.2f}", estimate_total_style)
+        p_desc  = Paragraph(desc_text, estimate_body_style)
+        w_desc, h_desc = p_desc.wrap(desc_w, y - bottom_margin)
+        p_desc.drawOn(c, desc_x, y - h_desc)
 
-        w_cat, h_cat = tmp_cat.wrap(cat_w, y - bottom_margin)
-        w_desc, h_desc = tmp_desc.wrap(desc_w, y - bottom_margin)
-        w_just, h_just = tmp_just.wrap(just_w, y - bottom_margin)
-        w_tot, h_tot = tmp_tot.wrap(total_w, y - bottom_margin)
+        # Justification
+        just_text = (
+            saxutils.escape(row.get("justification","—"))
+            .replace("\t", "&nbsp;"*4)
+            .replace("\r\n","\n")
+            .replace("\n","<br/>")
+        )
+        p_just  = Paragraph(just_text, estimate_just_style)
+        w_just, h_just = p_just.wrap(just_w, y - bottom_margin)
+        p_just.drawOn(c, just_x, y - h_just)
 
+        # Total
+        p_tot   = Paragraph(f"${row.get('total',0):,.2f}", estimate_total_style)
+        w_tot, h_tot  = p_tot.wrap(total_w, y - bottom_margin)
+        p_tot.drawOn(c, total_x, y - h_tot)
+
+        # now compute row height and page‐break
         row_h = max(h_cat, h_desc, h_just, h_tot)
-
         if y - row_h < bottom_margin:
             c.showPage()
             start_contents_page(False)
             y = height - 1.9 * inch
             y = draw_table_headers(y)
 
-        tmp_cat.drawOn(c, cat_x, y - h_cat)
-        tmp_desc.drawOn(c, desc_x, y - h_desc)
-        tmp_just.drawOn(c, just_x, y - h_just)
-        tmp_tot.drawOn(c, total_x, y - h_tot)
-
-        y -= row_h + 6
+        y -= (row_h + 6)
 
     c.save()
 
