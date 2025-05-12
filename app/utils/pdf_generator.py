@@ -69,165 +69,155 @@ estimate_total_style = ParagraphStyle(
     alignment=TA_RIGHT
 )
 
-    def generate_pdf(logo_path, client_name, claim_text, estimate_data):
-        # 1) Prepare output path
-        out_dir = "app/finalized_pdfs"
-        os.makedirs(out_dir, exist_ok=True)
-        pdf_path = os.path.join(out_dir, f"{client_name.replace(' ', '_')}_Claim.pdf")
+def generate_pdf(logo_path, client_name, claim_text, estimate_data):
+    # 1) Prepare output path
+    out_dir = "app/finalized_pdfs"
+    os.makedirs(out_dir, exist_ok=True)
+    pdf_path = os.path.join(out_dir, f"{client_name.replace(' ', '_')}_Claim.pdf")
 
-        # 2) Create Canvas
-        c = canvas.Canvas(pdf_path, pagesize=LETTER)
-        width, height = LETTER
+    # 2) Create Canvas
+    c = canvas.Canvas(pdf_path, pagesize=LETTER)
+    width, height = LETTER
 
-        # 3) Layout constants
-        left_margin = inch
-        right_margin = inch
-        top_margin = 3 * inch
-        bottom_margin = inch
+    # 3) Layout constants
+    left_margin = inch
+    right_margin = inch
+    bottom_margin = inch
 
-        # Columns for Contents Estimate
-        cat_x, cat_w = left_margin, 1.5 * inch
-        desc_x, desc_w = cat_x + cat_w + 0.2 * inch, 1.8 * inch
-        just_x, just_w = desc_x + desc_w + 0.2 * inch, 1.8 * inch
+    # Columns for Contents Estimate
+    cat_x, cat_w = left_margin, 1.5 * inch
+    desc_x, desc_w = cat_x + cat_w + 0.2 * inch, 1.8 * inch
+    just_x, just_w = desc_x + desc_w + 0.2 * inch, 1.8 * inch
 
-        # --- helper functions
-        def start_claim_page():
-            c.setFillColor(colors.HexColor("#FEFDF9"))
-            c.rect(0, 0, width, height, fill=1, stroke=0)
-            c.setFillColor(colors.HexColor("#3D4335"))
-            try:
-                img = ImageReader(logo_path)
-                c.drawImage(
-                    img,
-                    0.5 * inch,
-                    height - 1.4 * inch,
-                    width=3.2 * inch,
-                    height=1.2 * inch,
-                    preserveAspectRatio=True,
-                )
-            except:
-                pass
+    # Helper functions
+    def start_claim_page():
+        c.setFillColor(colors.HexColor("#FEFDF9"))
+        c.rect(0, 0, width, height, fill=1, stroke=0)
+        c.setFillColor(colors.HexColor("#3D4335"))
+        try:
+            img = ImageReader(logo_path)
+            c.drawImage(
+                img,
+                0.5 * inch,
+                height - 1.4 * inch,
+                width=3.2 * inch,
+                height=1.2 * inch,
+                preserveAspectRatio=True
+            )
+        except:
+            pass
+        c.setFont("Helvetica-Bold", 20)
+        c.drawCentredString(width / 2, height - 1.9 * inch, "Claim Package")
+
+    def start_contents_page(include_title: bool):
+        c.setFillColor(colors.HexColor("#FEFDF9"))
+        c.rect(0, 0, width, height, fill=1, stroke=0)
+        c.setFillColor(colors.HexColor("#3D4335"))
+        try:
+            img = ImageReader(logo_path)
+            c.drawImage(
+                img,
+                0.5 * inch,
+                height - 1.4 * inch,
+                width=3.2 * inch,
+                height=1.2 * inch,
+                preserveAspectRatio=True
+            )
+        except:
+            pass
+        if include_title:
             c.setFont("Helvetica-Bold", 20)
-            c.drawCentredString(width / 2, height - 1.9 * inch, "Claim Package")
+            c.drawCentredString(width / 2, height - 1.9 * inch, "Contents Estimate")
 
-        def start_contents_page(include_title: bool):
-            c.setFillColor(colors.HexColor("#FEFDF9"))
-            c.rect(0, 0, width, height, fill=1, stroke=0)
-            c.setFillColor(colors.HexColor("#3D4335"))
-            try:
-                img = ImageReader(logo_path)
-                c.drawImage(
-                    img,
-                    0.5 * inch,
-                    height - 1.4 * inch,
-                    width=3.2 * inch,
-                    height=1.2 * inch,
-                    preserveAspectRatio=True,
-                )
-            except:
-                pass
-            if include_title:
-                c.setFont("Helvetica-Bold", 20)
-                c.drawCentredString(width / 2, height - 1.9 * inch, "Contents Estimate")
+    def draw_table_headers(y_pos):
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(cat_x, y_pos, "Category")
+        c.drawString(desc_x, y_pos, "Description")
+        c.drawString(just_x, y_pos, "Justification")
+        c.drawRightString(width - right_margin, y_pos, "Total")
+        y2 = y_pos - 0.3 * inch
+        c.line(cat_x, y2, width - right_margin + 0.1 * inch, y2)
+        return y2 - 0.2 * inch
 
-        def draw_table_headers(y_pos):
-            c.setFont("Helvetica-Bold", 12)
-            c.drawString(cat_x, y_pos, "Category")
-            c.drawString(desc_x, y_pos, "Description")
-            c.drawString(just_x, y_pos, "Justification")
-            c.drawRightString(width - right_margin, y_pos, "Total")
-            y2 = y_pos - 0.3 * inch
-            c.line(cat_x, y2, width - right_margin + 0.1 * inch, y2)
-            return y2 - 0.2 * inch
+    # === Claim Package ===
+    title_y = height - 1.9 * inch
+    y_start = title_y - 0.5 * inch
+    avail_w = width - left_margin - right_margin
+    y = y_start
 
-        # === Claim Package ===
-        title_y = height - 1.9 * inch
-        y_start = title_y - 0.5 * inch
-        avail_w = width - left_margin - right_margin
-        y = y_start
+    start_claim_page()
 
+    claim_text = (claim_text or "").expandtabs(4)
+    pref = XPreformatted(claim_text, body_style)
+    avail_h = y - bottom_margin
+    w, h = pref.wrap(avail_w, avail_h)
+    if h > avail_h:
+        c.showPage()
         start_claim_page()
-
-        claim_text = (claim_text or "").expandtabs(4)
-        pref = XPreformatted(claim_text, body_style)
+        y = y_start
         avail_h = y - bottom_margin
         w, h = pref.wrap(avail_w, avail_h)
-        if h > avail_h:
-            c.showPage()
-            start_claim_page()
-            y = y_start
-            avail_h = y - bottom_margin
-            w, h = pref.wrap(avail_w, avail_h)
-        pref.drawOn(c, left_margin, y - h)
-        y -= h
+    pref.drawOn(c, left_margin, y - h)
+    y -= h
 
-        # === Contents Estimate ===
-        c.showPage()
-        start_contents_page(True)
-        y = height - 2.5 * inch
+    # === Contents Estimate ===
+    c.showPage()
+    start_contents_page(True)
+    y = height - 2.5 * inch
 
-        for label in [
-            "claimant",
-            "property",
-            "estimator",
-            "estimate_type",
-            "date_entered",
-            "date_completed",
-        ]:
-            text = f"{label.replace('_', ' ').title()}: "
-            val = estimate_data.get(label, "")
-            c.setFont("Helvetica-Bold", 12)
-            c.drawString(left_margin, y, text)
-            lw = c.stringWidth(text, "Helvetica-Bold", 12)
-            c.setFont("Helvetica", 12)
-            c.drawString(left_margin + lw, y, val)
-            y -= 0.3 * inch
-
+    for label in ["claimant", "property", "estimator", "estimate_type", "date_entered", "date_completed"]:
+        text = f"{label.replace('_', ' ').title()}: "
+        val = estimate_data.get(label, "")
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(left_margin, y, text)
+        lw = c.stringWidth(text, "Helvetica-Bold", 12)
+        c.setFont("Helvetica", 12)
+        c.drawString(left_margin + lw, y, val)
         y -= 0.3 * inch
-        total_sum = sum(r.get("total", 0) for r in estimate_data.get("rows", []))
-        c.setFont("Helvetica-Bold", 16)
-        c.drawCentredString(width / 2, y, f"Total Replacement Cost Value: ${total_sum:,.2f}")
-        y -= 0.6 * inch
 
-        y = draw_table_headers(y)
-        total_x = just_x + just_w + 0.2 * inch
-        total_w = width - right_margin - total_x
+    y -= 0.3 * inch
+    total_sum = sum(r.get("total", 0) for r in estimate_data.get("rows", []))
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(width / 2, y, f"Total Replacement Cost Value: ${total_sum:,.2f}")
+    y -= 0.6 * inch
 
-        for row in estimate_data.get("rows", []):
-            tmp_cat = Paragraph(row.get("category", "—"), estimate_body_style)
-            tmp_desc = Paragraph(
-                saxutils.escape(row.get("description", "—")), estimate_body_style
-            )
-            esc_j = (
-                saxutils.escape(row.get("justification", "—"))
-                .replace("\t", "&nbsp;" * 4)
-                .replace("\r\n", "\n")
-                .replace("\n", "<br/>")
-            )
-            tmp_just = Paragraph(esc_j, estimate_just_style)
-            tmp_tot = Paragraph(f"${row.get('total', 0):,.2f}", estimate_total_style)
+    y = draw_table_headers(y)
+    total_x = just_x + just_w + 0.2 * inch
+    total_w = width - right_margin - total_x
 
-            w_cat, h_cat = tmp_cat.wrap(cat_w, y - bottom_margin)
-            w_desc, h_desc = tmp_desc.wrap(desc_w, y - bottom_margin)
-            w_just, h_just = tmp_just.wrap(just_w, y - bottom_margin)
-            w_tot, h_tot = tmp_tot.wrap(total_w, y - bottom_margin)
+    for row in estimate_data.get("rows", []):
+        tmp_cat = Paragraph(row.get("category", "—"), estimate_body_style)
+        tmp_desc = Paragraph(saxutils.escape(row.get("description", "—")), estimate_body_style)
+        esc_j = (
+            saxutils.escape(row.get("justification", "—"))
+            .replace("\t", "&nbsp;" * 4)
+            .replace("\r\n", "\n")
+            .replace("\n", "<br/>")
+        )
+        tmp_just = Paragraph(esc_j, estimate_just_style)
+        tmp_tot = Paragraph(f"${row.get('total', 0):,.2f}", estimate_total_style)
 
-            row_h = max(h_cat, h_desc, h_just, h_tot)
+        w_cat, h_cat = tmp_cat.wrap(cat_w, y - bottom_margin)
+        w_desc, h_desc = tmp_desc.wrap(desc_w, y - bottom_margin)
+        w_just, h_just = tmp_just.wrap(just_w, y - bottom_margin)
+        w_tot, h_tot = tmp_tot.wrap(total_w, y - bottom_margin)
 
-            if y - row_h < bottom_margin:
-                c.showPage()
-                start_contents_page(False)
-                y = height - 1.9 * inch
-                y = draw_table_headers(y)
+        row_h = max(h_cat, h_desc, h_just, h_tot)
 
-            tmp_cat.drawOn(c, cat_x, y - h_cat)
-            tmp_desc.drawOn(c, desc_x, y - h_desc)
-            tmp_just.drawOn(c, just_x, y - h_just)
-            tmp_tot.drawOn(c, total_x, y - h_tot)
+        if y - row_h < bottom_margin:
+            c.showPage()
+            start_contents_page(False)
+            y = height - 1.9 * inch
+            y = draw_table_headers(y)
 
-            y -= row_h + 6
+        tmp_cat.drawOn(c, cat_x, y - h_cat)
+        tmp_desc.drawOn(c, desc_x, y - h_desc)
+        tmp_just.drawOn(c, just_x, y - h_just)
+        tmp_tot.drawOn(c, total_x, y - h_tot)
 
-        c.save()
+        y -= row_h + 6
+
+    c.save()
 
     # Upload PDF to S3...
     s3 = boto3.client(
