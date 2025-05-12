@@ -188,7 +188,8 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     total_x = just_x + just_w + 0.2 * inch
     total_w = width - right_margin - total_x
 
-        # Category
+    # Category
+    for row in estimate_data.get("rows", []):
         p_cat  = Paragraph(row.get("category","—"), estimate_body_style)
         w_cat, h_cat = p_cat.wrap(cat_w, y - bottom_margin)
         p_cat.drawOn(c, cat_x, y - h_cat)
