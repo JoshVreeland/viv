@@ -163,70 +163,69 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         chunk.drawOn(c, left_margin, y - h)
         y -= h
 
-    # === Contents Estimate ===
+    # ─── PAGE 2+: Contents Estimate ───
     c.showPage()
     start_contents_page(True)
-    y = height - 2.5 * inch
 
-    for label in ["claimant", "property", "estimator", "estimate_type", "date_entered", "date_completed"]:
-        text = f"{label.replace('_', ' ').title()}: "
-        val = estimate_data.get(label, "")
+    # metadata lines
+    y = height - 2.5*inch
+    for label in ["claimant","property","estimator","estimate_type","date_entered","date_completed"]:
+        text = f"{label.replace('_',' ').title()}: "
+        val  = estimate_data.get(label, "")
         c.setFont("Helvetica-Bold", 12)
-        c.drawString(left_margin, y, text)
+        c.drawString(inch, y, text)
         lw = c.stringWidth(text, "Helvetica-Bold", 12)
         c.setFont("Helvetica", 12)
-        c.drawString(left_margin + lw, y, val)
-        y -= 0.3 * inch
+        c.drawString(inch + lw, y, val)
+        y -= 0.3*inch
 
-    y -= 0.3 * inch
-    total_sum = sum(r.get("total", 0) for r in estimate_data.get("rows", []))
+    # grand total
+    y -= 0.3*inch
+    total_sum = sum(r.get("total",0) for r in estimate_data.get("rows",[]))
     c.setFont("Helvetica-Bold", 16)
-    c.drawCentredString(width / 2, y, f"Total Replacement Cost Value: ${total_sum:,.2f}")
-    y -= 0.6 * inch
+    c.drawCentredString(width/2, y, f"Total Replacement Cost Value: ${total_sum:,.2f}")
+    y -= 0.6*inch
 
+    # table headers & rows
     y = draw_table_headers(y)
-    total_x = just_x + just_w + 0.2 * inch
-    total_w = width - right_margin - total_x
-
-    # Category
     for row in estimate_data.get("rows", []):
-        p_cat  = Paragraph(row.get("category","—"), estimate_body_style)
-        w_cat, h_cat = p_cat.wrap(cat_w, y - bottom_margin)
-        p_cat.drawOn(c, cat_x, y - h_cat)
+        avail_h = y - bottom_margin
 
-        # Description
-        desc_text = (
-            saxutils.escape(row.get("description","—"))
-            .replace("\r\n","\n")
-            .replace("\n","<br/>")
-        )
-        p_desc  = Paragraph(desc_text, estimate_body_style)
-        w_desc, h_desc = p_desc.wrap(desc_w, y - bottom_margin)
-        p_desc.drawOn(c, desc_x, y - h_desc)
+        # pagination check
+        tmp_cat  = Paragraph(row.get("category","—"), just_style)
+        w_cat, h_cat = tmp_cat.wrap(cat_w, avail_h)
+        tmp_desc = Paragraph(saxutils.escape(row.get("description","—")), just_style)
+        w_desc,h_desc = tmp_desc.wrap(desc_w, avail_h)
+        raw_j = row.get("justification","—")
+        esc_j = saxutils.escape(raw_j).replace('\t','&nbsp;'*4).replace('\r\n','\n').replace('\n','<br/>')
+        tmp_just = Paragraph(esc_j, just_style)
+        w_just,h_just = tmp_just.wrap(just_w, avail_h)
+        tmp_tot = Paragraph(f"${row.get('total',0):,.2f}", just_style)
+        w_tot,h_tot = tmp_tot.wrap(just_w, avail_h)
+        row_h = max(h_cat, h_desc, h_just, h_tot, 14)
 
-        # Justification
-        just_text = (
-            saxutils.escape(row.get("justification","—"))
-            .replace("\t", "&nbsp;"*4)
-            .replace("\r\n","\n")
-            .replace("\n","<br/>")
-        )
-        p_just  = Paragraph(just_text, estimate_just_style)
-        w_just, h_just = p_just.wrap(just_w, y - bottom_margin)
-        p_just.drawOn(c, just_x, y - h_just)
-
-        # Total
-        p_tot   = Paragraph(f"${row.get('total',0):,.2f}", estimate_total_style)
-        w_tot, h_tot  = p_tot.wrap(total_w, y - bottom_margin)
-        p_tot.drawOn(c, total_x, y - h_tot)
-
-        # now compute row height and page‐break
-        row_h = max(h_cat, h_desc, h_just, h_tot)
         if y - row_h < bottom_margin:
             c.showPage()
             start_contents_page(False)
-            y = height - 1.9 * inch
+            y = height - 1.9*inch
             y = draw_table_headers(y)
+            avail_h = y - bottom_margin
+
+        # draw each cell, centered
+        cat_para  = Paragraph(row.get("category","—"), just_style)
+        w_cat,_    = cat_para.wrap(cat_w, avail_h)
+        cat_para.drawOn(c, cat_x + (cat_w-w_cat)/2, y-h_cat)
+
+        desc_para = Paragraph(saxutils.escape(row.get("description","—")), just_style)
+        w_desc,_  = desc_para.wrap(desc_w, avail_h)
+        desc_para.drawOn(c, desc_x + (desc_w-w_desc)/2, y-h_desc)
+
+        just_para = Paragraph(esc_j, just_style)
+        w_just,_  = just_para.wrap(just_w, avail_h)
+        just_para.drawOn(c, just_x + (just_w-w_just)/2, y-h_just)
+
+        # total right-aligned
+        tmp_tot.drawOn(c, total_x - w_tot, y - h_tot)
 
         y -= (row_h + 6)
 
