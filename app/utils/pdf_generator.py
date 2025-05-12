@@ -7,6 +7,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.platypus import BaseDocTemplate, Frame, PageTemplate, Paragraph
 from reportlab.platypus import Paragraph
+from reportlab.lib.utils import simpleSplit
 from reportlab.platypus import XPreformatted
 from xml.sax import saxutils
 from reportlab.lib.units import inch
@@ -117,42 +118,51 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
 
     # 5) Claim Package pagination
 
-    # ——— Claim Package with real wrapping & preserved whitespace ———   
-    
-    # 1) Normalize your raw text (keep bullets & leading tabs)
-    txt = claim_text or ""
-    txt = txt.replace('\r\n', '\n').replace('\t', '    ')
-        
-    # 2) Create the XPreformatted flowable (wraps at your width, preserves spaces)
-    pre = XPreformatted(txt, body_style)
-            
-    # 3) Margins & where text starts (0.5" below the title at 1.9" from top)
+    # ——— Claim Package manual wrap & preserved whitespace ———
+    # 1) Normalize newlines
+    raw_lines = (claim_text or "").replace('\r\n','\n').split('\n')
+
+    # 2) Margins & starting Y
     left_margin   = inch
     right_margin  = inch
     bottom_margin = inch
-        
-    title_y = height - 1.9 * inch
-    y_start = title_y - 0.5 * inch
-    
-    # **THIS** must come before you split:
+
+    title_y = height - 1.9 * inch   # your title baseline
+    y_start = title_y - 0.5 * inch   # 0.5" gap below title
+
     avail_w = width  - left_margin - right_margin
-    avail_h = y_start - bottom_margin
-        
-    # 4) Split into page-sized chunks
-    chunks = pre.split(avail_w, avail_h)
-        
-    # 5) Draw them, paginating when you run out of room
+    y       = y_start
+
+    # 3) Draw page header
     start_claim_page()
-    y = y_start
-    for chunk in chunks:
-        w, h = chunk.wrap(avail_w, avail_h)
-        if y - h < bottom_margin:
-            c.showPage()
-            start_claim_page()
-            y = y_start   
-        chunk.drawOn(c, left_margin, y - h)
-        y -= h
-    
+
+    # 4) Loop each original line, wrap to sub-lines, then draw
+    for orig in raw_lines:
+        # count & strip leading tabs/spaces
+        indent_chars = 0
+        while orig.startswith('\t') or orig.startswith(' '):
+            indent_chars += 1
+            orig = orig[1:]
+        indent_width = indent_chars * c.stringWidth(' ', body_style.fontName, body_style.fontSize)
+
+        # wrap this line into sub-lines that fit avail_w – indent_width
+        sublines = simpleSplit(orig,
+                                body_style.fontName,
+                                body_style.fontSize,
+                                avail_w - indent_width)
+
+        # draw each wrapped sub-line
+        for sub in sublines:
+            # new page if we’d run past bottom
+            if y < bottom_margin + body_style.leading:
+                c.showPage()
+                start_claim_page()
+                y = y_start
+            # draw text
+            c.setFont(body_style.fontName, body_style.fontSize)
+            c.drawString(left_margin + indent_width, y, sub)
+            y -= body_style.leading
+
     # ——— end Claim Package ———
 
     # 6) Contents Estimate (new page)
@@ -174,7 +184,7 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     # grand total
     y -= 0.3*inch
     total_sum = sum(r.get("total",0) for r in estimate_data.get("rows",[]))
-    c.setFont("Helvetica", 12)
+    c.setFont("Helvetica-Bold", 16)
     c.drawCentredString(width/2, y, f"Total Replacement Cost Value: ${total_sum:,.2f}")
     y -= 0.6*inch
 
@@ -204,9 +214,15 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         tmp_cat.drawOn(c,  cat_x,             y - h_cat)
         tmp_desc.drawOn(c, desc_x,            y - h_desc)
         tmp_just.drawOn(c, just_x,            y - h_just)
-        c.drawRightString(width - right_margin, y - (row_h/2) + 4, f"${row.get('total',0):,.2f}")
+        # per-row total: regular Helvetica, 12pt
+        c.setFont("Helvetica", 12)
+        c.drawRightString(
+            width - right_margin,
+            y - (row_h/2) + 4,
+            f"${row.get('total',0):,.2f}"
+        )
         y -= (row_h + 6)
-    
+
     c.save()
         
     # Upload PDF to S3...
