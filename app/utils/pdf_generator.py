@@ -15,6 +15,7 @@ from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph
 from reportlab.platypus import Preformatted
 import xml.sax.saxutils as saxutils
+from .utils.pdf_generator import sanitize_claim_text
 import boto3
 from .excel_generator import generate_excel  # relative import
 from html import unescape
@@ -182,17 +183,16 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
 
     # ——— Claim Package (with proper wrapping + pagination) ———
 
+    # ——— sanitize & split into lines ———
+    clean    = sanitize_claim_text(claim_text)
+    plain    = clean.expandtabs(4)
+    lines    = plain.split("\n")
+    joined   = "\n".join(lines)
+
+    # ——— build a single Preformatted flowable ———
     from reportlab.platypus import Preformatted
-
-    # 1) sanitize out any HTML → bullets & newlines
-    clean = sanitize_claim_text(claim_text)
-
-    # 2) expand tabs → 4 spaces, normalize newlines
-    pre_text = clean.expandtabs(4)
-
-    # 3) build a Preformatted flowable that preserves spacing
     pre_style = ParagraphStyle(
-        name="PreformattedBody",
+        name="Pre",
         parent=body_style,
         fontName="Helvetica",
         fontSize=12,
@@ -200,26 +200,21 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         splitLongWords=False,
         allowSplitting=True,
     )
-    pref = Preformatted(pre_text, pre_style)
+    pref = Preformatted(joined, pre_style)
 
-    # 4) pagination parameters
-    left = inch
+    # ——— paginate + draw exactly like you do for Contents Estimate ———
     avail_w = width - 2*inch
     y_start = height - 3*inch
     avail_h = y_start - bottom_margin
-
-    # 5) split into page-sized chunks
-    chunks = pref.split(avail_w, avail_h)
-    y = y_start
-
-    # 6) draw each chunk with header on new page
+    chunks  = pref.split(avail_w, avail_h)
+    y       = y_start
     for i, chunk in enumerate(chunks):
         if i > 0:
             c.showPage()
             start_claim_page()
             y = y_start
         w, h = chunk.wrap(avail_w, avail_h)
-        chunk.drawOn(c, left, y - h)
+        chunk.drawOn(c, inch, y - h)
         y -= h
 
     # ─── PAGE 2+: Contents Estimate ───

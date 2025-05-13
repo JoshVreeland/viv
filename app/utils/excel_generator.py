@@ -4,7 +4,6 @@ import xlsxwriter
 import boto3
 from openpyxl.styles import Border, Side, Alignment
 import re
-
 from html import unescape
 
 
@@ -78,19 +77,14 @@ def generate_excel(pdf_path: str,
     ws1.insert_image('A1', logo_path, {'x_scale': 0.39, 'y_scale': 0.36})
 
     # ——— Claim Package body, sanitized & wrapped ———
+    # sanitize Quill HTML → plain text with bullets & newlines
+    clean = sanitize_claim_text(claim_text or "")
+    # expand tabs → 4 spaces, keep line breaks
+    plain = clean.expandtabs(4)
 
-    # 1) strip out HTML → bullets & newlines
-    clean = sanitize_claim_text(claim_text)
-
-    # 2) expand tabs → 4 spaces, normalize line breaks
-    lines = clean.expandtabs(4).split("\n")
-
-    # 3) write each line into its own Excel row inside the merged box
-    ws1.merge_range('A16:H61', '', top_fmt)
-    for idx, line in enumerate(lines):
-        # row 16 + idx, column A
-        ws1.write(16 + idx, 0, line, top_fmt)
-
+    # 3) write your entire text into the merged cell
+    ws1.merge_range('A16:H61', plain, top_fmt)
+    # hide everything past column H
     ws1.set_column('AA:XFD', None, None, {'hidden': True})
 
     # === SHEET 2: Contents Estimate (your specific tweaks) ===
