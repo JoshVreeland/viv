@@ -1,5 +1,6 @@
 import os
 from reportlab.pdfgen import canvas
+from bs4 import BeautifulSoup
 from reportlab.lib.pagesizes import LETTER  
 from reportlab.lib.units import inch
 from reportlab.lib.utils import ImageReader
@@ -143,6 +144,29 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
             c.setFont("Helvetica-Bold", 20)
             c.drawCentredString(width / 2, height - 1.9 * inch, "Contents Estimate")
 
+    def html_to_plain(html: str) -> str:
+    """
+    Convert simple HTML (from Quill) into plain text with newlines and bullets.
+    """
+    soup = BeautifulSoup(html or "", "html.parser")
+
+    # <br> → real newline
+    for br in soup.find_all("br"):
+        br.replace_with("\n")
+
+    # put a blank line before each <p>
+    for p in soup.find_all("p"):
+        p.insert_before("\n")
+
+    # turn list items into bullets
+    for li in soup.find_all("li"):
+        li.insert_before("• ")
+
+    text = soup.get_text()
+    # collapse stray blank lines
+    lines = [ln.rstrip() for ln in text.splitlines()]
+    return "\n".join(lines).strip()
+
     def draw_table_headers(y_pos):
         c.setFont("Helvetica-Bold", 12)
         # Left-aligned headers for Category, Description, and Justification
@@ -187,7 +211,7 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     # 4) Compute available area for text
     avail_h = y_start - bottom_margin
 
-    # 5) Split into page‐sized chunks
+    # 5) Split into page-sized chunks
     chunks = pref.split(avail_w, avail_h)
 
     # 6) Draw each chunk, paging as needed
@@ -198,7 +222,6 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
             start_claim_page()
             y = y_start
             avail_h = y_start - bottom_margin
-
         w, h = chunk.wrap(avail_w, avail_h)
         chunk.drawOn(c, left_margin, y - h)
         y -= h

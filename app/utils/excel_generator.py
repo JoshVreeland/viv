@@ -50,7 +50,6 @@ def generate_excel(pdf_path: str,
     for r in range(100):
         for c in range(30):
             ws1.write_blank(r, c, None, bg_fmt)
-
     ws1.hide_gridlines(2)
     ws1.set_tab_color('#FFFDFA')
     ws1.set_column('A:H', 15)
@@ -62,17 +61,15 @@ def generate_excel(pdf_path: str,
     ws1.merge_range('A1:H14', '', border_fmt)
     ws1.insert_image('A1', logo_path, {'x_scale': 0.39, 'y_scale': 0.36})
 
-
-    # 2) build your value by converting every tab into 4 NBSPs
+    # 2) Build your value by converting every tab into 4 non-breaking spaces
     lines = claim_text.split("\n")
     out   = []
     for line in lines:
-        # replace every tab (before or after the “1.”) with 4 non-breaking spaces
         line = line.replace("\t", "\u00A0" * 4)
         out.append(line)
     value = "\n".join(out)
 
-    # 3) write that into the merged cell
+    # 3) Write that into the merged cell (A16:H61), with top alignment
     ws1.merge_range('A16:H61', value, top_fmt)
     ws1.set_column('AA:XFD', None, None, { 'hidden': True })
 
