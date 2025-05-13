@@ -16,23 +16,35 @@ from reportlab.platypus import Paragraph
 from reportlab.platypus import Preformatted
 import xml.sax.saxutils as saxutils
 import boto3
-            
 from .excel_generator import generate_excel  # relative import
-
+from html import unescape
 import re
 
+# === sanitize_claim_text ====================================================
 def sanitize_claim_text(html: str) -> str:
+    """
+    Convert simple Quill/HTML lists into bullets+newlines, strip tags,
+    unescape entities, collapse excess blank lines.
+    """
     if not html:
         return ""
-    # turn each opening <li> into a bullet + space
-    clean = re.sub(r'<li[^>]*>', '• ', html)
-    # turn each closing </li> into a newline
-    clean = clean.replace('</li>', '\n')
-    # drop any other tags
-    clean = re.sub(r'<[^>]+>', '', clean)
-    # collapse any &nbsp; into real spaces
-    clean = clean.replace('&nbsp;', ' ')
-    return clean
+    # 1) <li>…</li> → “• content\n”
+    html = re.sub(
+        r'<li[^>]*>(.*?)</li>',
+        lambda m: "• " + unescape(m.group(1).strip()) + "\n",
+        html,
+        flags=re.S | re.I
+    )
+    # 2) <br> or </p> → newline
+    html = re.sub(r'<br\s*/?>', '\n', html, flags=re.I)
+    html = re.sub(r'</p\s*>', '\n', html, flags=re.I)
+    # 3) strip any other tags
+    html = re.sub(r'<[^>]+>', '', html)
+    # 4) unescape entities
+    text = unescape(html)
+    # 5) collapse 3+ newlines to just 2
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    return text.strip()
     
 # === COLOR PALETTE ===
 bg_color = colors.HexColor("#FEFDF9") 
@@ -158,29 +170,6 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
             c.setFont("Helvetica-Bold", 20)
             c.drawCentredString(width / 2, height - 1.9 * inch, "Contents Estimate")
 
-    def html_to_plain(html: str) -> str:
-        """
-        Convert simple HTML (from Quill) into plain text with newlines and bullets.
-        """
-        soup = BeautifulSoup(html or "", "html.parser")
-
-        # <br> → real newline
-        for br in soup.find_all("br"):
-            br.replace_with("\n")
-
-        # put a blank line before each <p>
-        for p in soup.find_all("p"):
-            p.insert_before("\n")
-
-        # turn list items into bullets
-        for li in soup.find_all("li"):
-            li.insert_before("• ")
-
-        text = soup.get_text()
-        # collapse stray blank lines
-        lines = [ln.rstrip() for ln in text.splitlines()]
-        return "\n".join(lines).strip()
-
     def draw_table_headers(y_pos):
         c.setFont("Helvetica-Bold", 12)
         # Left-aligned headers for Category, Description, and Justification
@@ -206,40 +195,26 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
 
     # ─── Claim Package (with proper wrapping + pagination) ───
 
-    # 1) Sanitize any incoming HTML (ol/li/etc) → bullets + real newlines
-    raw_html = claim_text or ""
-    cleaned  = sanitize_claim_text(raw_html)
-
-    # 2) Expand tabs to 4 spaces and normalize newlines
-    safe     = cleaned.expandtabs(4).replace("\r\n", "\n")
-
-    # 3) Escape XML chars so '<' & '>' don't break things
-    esc      = saxutils.escape(safe)
-
-    # 3) Create a Preformatted flowable that preserves spaces & line breaks
-    from reportlab.platypus import Preformatted
+    # prepare and clean text
+    cleaned = sanitize_claim_text(claim_text or "")
+    # Preformatted preserves spaces, tabs, newlines
     pre_style = ParagraphStyle(
-        name="PreformattedBody",
+        name="PreFormattedBody",
         parent=body_style,
         splitLongWords=False,
         allowSplitting=True,
+        wordWrap="LTR"
     )
-    pref = Preformatted(esc, pre_style)
+    pref = Preformatted(cleaned, pre_style)
 
-    # 4) Compute available area for text
-    avail_h = y_start - bottom_margin
-
-    # 5) Split into page-sized chunks
+    # split into page-sized chunks
     chunks = pref.split(avail_w, avail_h)
-
-    # 6) Draw each chunk, paging as needed
     y = y_start
     for i, chunk in enumerate(chunks):
         if i > 0:
             c.showPage()
             start_claim_page()
             y = y_start
-            avail_h = y_start - bottom_margin
         w, h = chunk.wrap(avail_w, avail_h)
         chunk.drawOn(c, left_margin, y - h)
         y -= h

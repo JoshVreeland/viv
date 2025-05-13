@@ -5,18 +5,31 @@ import boto3
 from openpyxl.styles import Border, Side, Alignment
 import re
 
+from html import unescape
+
 def sanitize_claim_text(html: str) -> str:
+    """
+    Strip minimal HTML (from Quill) into bullets and real new‐lines.
+    """
     if not html:
         return ""
-    # turn each opening <li> into a bullet + space
-    clean = re.sub(r'<li[^>]*>', '• ', html)
-    # turn each closing </li> into a newline
-    clean = clean.replace('</li>', '\n')
-    # drop any other tags
-    clean = re.sub(r'<[^>]+>', '', clean)
-    # collapse any &nbsp; into real spaces
-    clean = clean.replace('&nbsp;', ' ')
-    return clean
+    # 1) turn each <li>…</li> into a bullet + newline
+    html = re.sub(
+        r'<li[^>]*>(.*?)</li>',
+        lambda m: "• " + unescape(m.group(1)).strip() + "\n",
+        html,
+        flags=re.S | re.I
+    )
+    # 2) replace any remaining <br> or <p> with newline
+    html = re.sub(r'<br\s*/?>', '\n', html, flags=re.I)
+    html = re.sub(r'</p\s*>', '\n', html, flags=re.I)
+    # 3) strip all other tags
+    html = re.sub(r'<[^>]+>', '', html)
+    # 4) unescape HTML entities
+    text = unescape(html)
+    # 5) collapse multiple newlines
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    return text.strip()
 
 def generate_excel(pdf_path: str,
                    logo_path: str,
@@ -75,28 +88,14 @@ def generate_excel(pdf_path: str,
     ws1.merge_range('A1:H15', '', border_fmt)
     ws1.insert_image('A1', logo_path, {'x_scale': 0.39, 'y_scale': 0.36})
 
-    # 2) build your value by converting every tab into 4 NBSPs
-    lines = claim_text.split("\n")
-    out   = []
-    for line in lines:
-        # replace every tab with 4 non-breaking spaces
-        line = line.replace("\t", "\u00A0" * 4)
-        out.append(line)
-    value = "\n".join(out)
+    # ——— Claim Package body, sanitized & wrapped ———
+    raw_html = claim_text or ""
+    clean    = sanitize_claim_text(raw_html)
+    # expand any tabs into 4 non‐breaking spaces
+    lines    = [ln.replace('\t', '\u00A0'*4) for ln in clean.splitlines()]
+    value    = "\n".join(lines)
 
-    # 2) sanitize any incoming HTML → bullets + newlines
-    claim_text = sanitize_claim_text(claim_text)
-
-    # 3) build your value by converting every tab into 4 NBSPs
-    lines = claim_text.split("\n")
-    out   = []
-    for line in lines:
-        # replace every tab with 4 non-breaking spaces
-        line = line.replace("\t", "\u00A0" * 4)
-        out.append(line)
-    value = "\n".join(out)
-
-    # 4) write that into the merged cell
+    # write it into the big merged box
     ws1.merge_range('A16:H61', value, top_fmt)
 
     ws1.set_column('AA:XFD', None, None, {'hidden': True})
