@@ -40,12 +40,12 @@ async def claim_package(request: Request):
 @router.post("/contents-estimate", response_class=HTMLResponse)
 async def contents_estimate_post(
     request: Request,
-    claim_delta: str = Form(...),    # we only ever refer to this
+    claim_delta: str = Form(...),    # ← only this
 ):
     # parse the incoming Quill Delta JSON
     delta = json.loads(claim_delta)
 
-    # build a plain-text version with bullets/numbers + indentation
+    # build a plain-text version with bullets + indentation
     lines = []
     for op in delta.get("ops", []):
         text  = op.get("insert", "")
@@ -57,10 +57,9 @@ async def contents_estimate_post(
             lines.append(prefix + text.strip())
         else:
             lines.append(text)
-    # rename the processed text to claim_delta so you never touch claim_text
     claim_delta = "\n".join(lines)
 
-    # render the next page, passing only claim_delta
+    # render the contents_estimate page, passing only claim_delta
     return templates.TemplateResponse(
         "contents_estimate.html",
         {
