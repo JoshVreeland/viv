@@ -167,32 +167,32 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
 
     # ——— Claim Package via Paragraph.split() ———
 
-    # ——— PAGE 1+: Claim Package (with pagination) ———
-    from reportlab.platypus import Preformatted
+    # ─── Claim Package (with proper wrapping + pagination) ───
+    start_claim_page()
 
-    # 1) Build a Preformatted to keep tabs/spaces/newlines
-    raw        = (claim_text or "").expandtabs(4)
-    escaped    = saxutils.escape(raw).replace('\r\n','\n').replace('\n','<br/>')
-    pre_block  = Preformatted(escaped, body_style)
+    # prepare claim_text, preserve tabs as 4 non-breaking spaces
+    safe = (claim_text or "").expandtabs(4)
+    esc  = saxutils.escape(safe).replace("\r\n","\n").replace("\n","<br/>")
+    para = Paragraph(esc, body_style)
 
-    # 2) Compute available width & starting Y
-    avail_w    = width - 2 * inch
-    y_cursor   = height - 3 * inch
-    bottom_y   = inch
+    # compute available area
+    y_start = height - 1.9*inch
+    avail_w  = width - left_margin - right_margin
+    avail_h  = y_start - bottom_margin
 
-    # 3) Split into page-sized pieces
-    chunks     = pre_block.split(avail_w, y_cursor - bottom_y)
+    # split into page-sized chunks
+    chunks = para.split(avail_w, avail_h)
+    y = y_start
 
-    # 4) Draw each chunk on its own page
-    for idx, frag in enumerate(chunks):
-        if idx > 0:
+    for i, chunk in enumerate(chunks):
+        if i > 0:
             c.showPage()
             start_claim_page()
-            y_cursor = height - 3 * inch
-
-        w, h = frag.wrap(avail_w, y_cursor - bottom_y)
-        frag.drawOn(c, inch, y_cursor - h)
-        y_cursor -= (h + 6)  # small gap after each fragment
+            y = y_start
+            avail_h = y - bottom_margin
+        w, h = chunk.wrap(avail_w, avail_h)
+        chunk.drawOn(c, left_margin, y - h)
+        y -= h
 
     # ─── PAGE 2+: Contents Estimate ───
     c.showPage()
