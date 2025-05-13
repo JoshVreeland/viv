@@ -192,67 +192,57 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     c.drawCentredString(width/2, y, f"Total Replacement Cost Value: ${total_sum:,.2f}")
     y -= 0.6*inch
 
-    # layout constants (narrower columns for multi-page)
-    cat_x, cat_w   = inch, 1.5*inch
-    desc_x, desc_w = cat_x+cat_w+0.1*inch, 2.0*inch
-    just_x, just_w = desc_x+desc_w+0.1*inch, 2.0*inch
+    # ── four-column layout & pagination ──
+    cat_x,  cat_w  = inch,                    1.5 * inch
+    desc_x, desc_w = cat_x + cat_w + 0.2*inch, 2.0 * inch
+    just_x, just_w = desc_x + desc_w + 0.2*inch,2.0 * inch
     total_x        = width - inch
 
-    # table headers & rows
+    # draw headers
     y = draw_table_headers(y)
+
+    # process each row, wrapping & paginating
     for row in estimate_data.get("rows", []):
         avail_h = y - bottom_margin
 
-        # pagination check
+        # measure heights
         tmp_cat  = Paragraph(row.get("category","—"), just_style)
-        w_cat, h_cat = tmp_cat.wrap(cat_w, avail_h)
-        tmp_desc = Paragraph(saxutils.escape(row.get("description","—")), just_style)
-        w_desc,h_desc = tmp_desc.wrap(desc_w, avail_h)
-        raw_j = row.get("justification","—")
-        esc_j = saxutils.escape(raw_j).replace('\t','&nbsp;'*4).replace('\r\n','\n').replace('\n','<br/>')
-        tmp_just = Paragraph(esc_j, just_style)
-        w_just,h_just = tmp_just.wrap(just_w, avail_h)
-        tmp_tot = Paragraph(f"${row.get('total',0):,.2f}", just_style)
-        w_tot,h_tot = tmp_tot.wrap(just_w, avail_h)
-        row_h = max(h_cat, h_desc, h_just, h_tot, 14)
+        _, h_cat  = tmp_cat.wrap(cat_w, avail_h)
 
+        tmp_desc = Paragraph(saxutils.escape(row.get("description","—")), just_style)
+        _, h_desc = tmp_desc.wrap(desc_w, avail_h)
+
+        raw_j     = row.get("justification","—")
+        esc_j     = saxutils.escape(raw_j).replace('\t','&nbsp;'*4)\
+                                         .replace('\r\n','\n')\
+                                         .replace('\n','<br/>')
+        tmp_just = Paragraph(esc_j, just_style)
+        _, h_just = tmp_just.wrap(just_w, avail_h)
+
+        row_h = max(h_cat, h_desc, h_just, 14)
+
+        # pagination break?
         if y - row_h < bottom_margin:
             c.showPage()
             start_contents_page(False)
             y = height - 1.9*inch
             y = draw_table_headers(y)
-            avail_h = y - bottom_margin
 
-    # Rows
-    for row in estimate_data.get("rows", []):
-        avail_h = y - bottom_margin
-        
-        # Category
-        cat_para = Paragraph(row.get("category", "—"), just_style)
-        w_cat, h_cat = cat_para.wrap(cat_w, avail_h)
-        cat_para.drawOn(c, cat_x + (cat_w - w_cat)/2, y - h_cat)
-    
-        # Description 
-        desc_para = Paragraph(saxutils.escape(row.get("description", "—")), just_style)
-        w_desc, h_desc = desc_para.wrap(desc_w, avail_h)
-        desc_para.drawOn(c, desc_x + (desc_w - w_desc)/2, y - h_desc)
-    
-        # Justification
-        raw_j = row.get("justification", "—")
-        esc_j = saxutils.escape(raw_j).replace('\t','&nbsp;'*4).replace('\r\n','\n').replace('\n','<br/>')
-        just_para = Paragraph(esc_j, just_style)
-        w_just, h_just = just_para.wrap(just_w, avail_h)
-        just_para.drawOn(c, just_x + (just_w - w_just)/2, y - h_just)
-    
-        # Total (right-aligned)
-        row_h = max(h_cat, h_desc, h_just, 14)
+        # draw Category (centered in its column)
+        tmp_cat.drawOn(c, cat_x  + (cat_w  - tmp_cat.width)  / 2, y - h_cat)
+        # draw Description
+        tmp_desc.drawOn(c,desc_x + (desc_w - tmp_desc.width) / 2, y - h_desc)
+        # draw Justification
+        tmp_just.drawOn(c,just_x + (just_w - tmp_just.width) / 2, y - h_just)
+
+        # draw Total, right-aligned
         c.setFont("Helvetica", 10)
         c.drawRightString(
-            width - inch,
+            total_x,
             y - (row_h/2) + 4,
-            f"${row.get('total', 0):,.2f}"
+            f"${row.get('total',0):,.2f}"
         )
-        
+
         y -= (row_h + 6)
     
     c.save()
