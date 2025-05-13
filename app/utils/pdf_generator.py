@@ -163,33 +163,42 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     avail_w = width - left_margin - right_margin
     y = y_start
 
+    # Draw first page header/logo/title
     start_claim_page()
-
-    # ——— Claim Package via Paragraph.split() ———
 
     # ─── Claim Package (with proper wrapping + pagination) ───
-    start_claim_page()
 
-    # prepare claim_text, preserve tabs as 4 non-breaking spaces
-    safe = (claim_text or "").expandtabs(4)
-    esc  = saxutils.escape(safe).replace("\r\n","\n").replace("\n","<br/>")
-    esc = f'<pre>{esc}</pre>'  # Wrap in preformatted text tags
+    # 1) Expand tabs to 4 spaces and normalize newlines
+    safe = (claim_text or "").expandtabs(4).replace("\r\n", "\n")
 
-    # compute available area
-    y_start = height - 1.9*inch
-    avail_w  = width - left_margin - right_margin
-    avail_h  = y_start - bottom_margin
+    # 2) Escape XML chars so '<' & '>' don't break things
+    esc = saxutils.escape(safe)
 
-    # split into page-sized chunks
-    chunks = para.split(avail_w, avail_h)
+    # 3) Create a Preformatted flowable that preserves spaces & line breaks
+    from reportlab.platypus import Preformatted
+    pre_style = ParagraphStyle(
+        name="PreformattedBody",
+        parent=body_style,
+        splitLongWords=False,
+        allowSplitting=True,
+    )
+    pref = Preformatted(esc, pre_style)
+
+    # 4) Compute available area for text
+    avail_h = y_start - bottom_margin
+
+    # 5) Split into page‐sized chunks
+    chunks = pref.split(avail_w, avail_h)
+
+    # 6) Draw each chunk, paging as needed
     y = y_start
-
     for i, chunk in enumerate(chunks):
         if i > 0:
             c.showPage()
             start_claim_page()
             y = y_start
-            avail_h = y - bottom_margin
+            avail_h = y_start - bottom_margin
+
         w, h = chunk.wrap(avail_w, avail_h)
         chunk.drawOn(c, left_margin, y - h)
         y -= h
