@@ -201,43 +201,69 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     # draw headers
     y = draw_table_headers(y)
 
+    # ── Rows with wrap + pagination in one pass ──
     for row in estimate_data.get("rows", []):
         avail_h = y - bottom_margin
 
-        # Category
-        cat_para = Paragraph(row["category"], just_style)
+        # build and wrap each Paragraph
+        cat_para  = Paragraph(row.get("category", "—"), just_style)
         w_cat, h_cat = cat_para.wrap(cat_w, avail_h)
 
-        # Description
-        desc_para = Paragraph(row["description"], just_style)
+        desc_para = Paragraph(
+            saxutils.escape(row.get("description", "—")),
+            just_style
+        )
         w_desc, h_desc = desc_para.wrap(desc_w, avail_h)
 
-        # Justification
-        just_para = Paragraph(row["justification"], just_style)
+        raw_j = row.get("justification", "—")
+        esc_j = (
+            saxutils.escape(raw_j)
+            .replace('\t', '&nbsp;'*4)
+            .replace('\r\n','\n')
+            .replace('\n','<br/>')
+        )
+        just_para = Paragraph(esc_j, just_style)
         w_just, h_just = just_para.wrap(just_w, avail_h)
 
         row_h = max(h_cat, h_desc, h_just, 14)
 
-        # pagination break?
+        # pagination break
         if y - row_h < bottom_margin:
             c.showPage()
             start_contents_page(False)
             y = height - 1.9*inch
             y = draw_table_headers(y)
+            avail_h = y - bottom_margin
 
-        # draw Category (centered in its column)
-        tmp_cat.drawOn(c, cat_x  + (cat_w  - tmp_cat.width)  / 2, y - h_cat)
-        # draw Description
-        tmp_desc.drawOn(c,desc_x + (desc_w - tmp_desc.width) / 2, y - h_desc)
-        # draw Justification
-        tmp_just.drawOn(c,just_x + (just_w - tmp_just.width) / 2, y - h_just)
+            # re-wrap now that widths/avail_h are same
+            w_cat, h_cat = cat_para.wrap(cat_w, avail_h)
+            w_desc, h_desc = desc_para.wrap(desc_w, avail_h)
+            w_just, h_just = just_para.wrap(just_w, avail_h)
+            row_h = max(h_cat, h_desc, h_just, 14)
 
-        # draw Total, right-aligned
+        # draw each cell, centered horizontally in its column
+        cat_para.drawOn(
+            c,
+            cat_x + (cat_w - w_cat) / 2,
+            y - h_cat
+        )
+        desc_para.drawOn(
+            c,
+            desc_x + (desc_w - w_desc) / 2,
+            y - h_desc
+        )
+        just_para.drawOn(
+            c,
+            just_x + (just_w - w_just) / 2,
+            y - h_just
+        )
+
+        # total, right-aligned
         c.setFont("Helvetica", 10)
         c.drawRightString(
             total_x,
-            y - (row_h/2) + 4,
-            f"${row.get('total',0):,.2f}"
+            y - (row_h / 2) + 4,
+            f"${row.get('total', 0):,.2f}"
         )
 
         y -= (row_h + 6)
