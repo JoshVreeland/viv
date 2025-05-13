@@ -87,8 +87,8 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
 
     # Define column widths for each section
     cat_x, cat_w = left_margin, 1.5 * inch           # Category column, width 1.5 inches
-    desc_x, desc_w = cat_x + cat_w + 0.2 * inch, 2.5 * inch  # Description column, width 2.5 inches
-    just_x, just_w = desc_x + desc_w + 0.2 * inch, 2.5 * inch  # Justification column, width 2.5 inches
+    desc_x, desc_w = cat_x + cat_w + 0.2 * inch, 2.0 * inch  # Description column, width 2.5 inches
+    just_x, just_w = desc_x + desc_w + 0.2 * inch, 2.0 * inch  # Justification column, width 2.5 inches
     total_x = width - right_margin  # Total column, right-aligned
 
     # Helper functions
@@ -201,23 +201,20 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     # draw headers
     y = draw_table_headers(y)
 
-    # process each row, wrapping & paginating
     for row in estimate_data.get("rows", []):
         avail_h = y - bottom_margin
 
-        # measure heights
-        tmp_cat  = Paragraph(row.get("category","—"), just_style)
-        _, h_cat  = tmp_cat.wrap(cat_w, avail_h)
+        # Category
+        cat_para = Paragraph(row["category"], just_style)
+        w_cat, h_cat = cat_para.wrap(cat_w, avail_h)
 
-        tmp_desc = Paragraph(saxutils.escape(row.get("description","—")), just_style)
-        _, h_desc = tmp_desc.wrap(desc_w, avail_h)
+        # Description
+        desc_para = Paragraph(row["description"], just_style)
+        w_desc, h_desc = desc_para.wrap(desc_w, avail_h)
 
-        raw_j     = row.get("justification","—")
-        esc_j     = saxutils.escape(raw_j).replace('\t','&nbsp;'*4)\
-                                         .replace('\r\n','\n')\
-                                         .replace('\n','<br/>')
-        tmp_just = Paragraph(esc_j, just_style)
-        _, h_just = tmp_just.wrap(just_w, avail_h)
+        # Justification
+        just_para = Paragraph(row["justification"], just_style)
+        w_just, h_just = just_para.wrap(just_w, avail_h)
 
         row_h = max(h_cat, h_desc, h_just, 14)
 
