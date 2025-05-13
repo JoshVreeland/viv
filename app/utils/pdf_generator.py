@@ -197,7 +197,7 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     # ── four-column layout & pagination ──
     cat_x,  cat_w  = inch,                    1.5 * inch
     desc_x, desc_w = cat_x + cat_w + 0.2*inch, 2.0 * inch
-    just_x, just_w = desc_x + desc_w + 0.2*inch,2.0 * inch
+    just_x, just_w = desc_x + desc_w + 0.2*inch, 1.5 * inch
     total_x        = width - inch
 
     # draw headers
