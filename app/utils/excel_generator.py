@@ -7,19 +7,16 @@ import re
 
 from html import unescape
 
-# at the top of your file, alongside your other imports:
-import re
 
 def sanitize_claim_text(html: str) -> str:
     """
-    Turn simple <li>…</li> lists into bullets + newlines,
-    strip any other tags, and return plain-text.
+    Strip out any HTML tags from Quill output and turn <li>…</li> into bullets + newlines.
     """
-    # 1) closing </li> → newline
+    # Convert closing </li> into newline
     text = re.sub(r'</li\s*>', '\n', html or '', flags=re.IGNORECASE)
-    # 2) opening <li…> → bullet + space
+    # Convert opening <li…> into bullet + space
     text = re.sub(r'<li[^>]*>', '• ', text, flags=re.IGNORECASE)
-    # 3) remove any remaining tags
+    # Strip all other tags
     text = re.sub(r'<[^>]+>', '', text)
     return text
 
@@ -82,16 +79,17 @@ def generate_excel(pdf_path: str,
 
     # ——— Claim Package body, sanitized & wrapped ———
 
-    # 1) strip out any <li>…</li> HTML into bullets+newlines
+    # 1) strip out HTML → bullets & newlines
     clean = sanitize_claim_text(claim_text)
 
     # 2) expand tabs → 4 spaces, normalize line breaks
     lines = clean.expandtabs(4).split("\n")
 
-    # 3) re-join exactly as lines
-    value = "\n".join(lines)
-
-    ws1.merge_range('A16:H61', value, top_fmt)
+    # 3) write each line into its own Excel row inside the merged box
+    ws1.merge_range('A16:H61', '', top_fmt)
+    for idx, line in enumerate(lines):
+        # row 16 + idx, column A
+        ws1.write(16 + idx, 0, line, top_fmt)
 
     ws1.set_column('AA:XFD', None, None, {'hidden': True})
 

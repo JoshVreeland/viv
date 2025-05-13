@@ -22,14 +22,13 @@ import re
 
 def sanitize_claim_text(html: str) -> str:
     """
-    Turn simple <li>…</li> lists into bullets + newlines,
-    strip any other tags, and return plain-text.
+    Strip out any HTML tags from Quill output and turn <li>…</li> into bullets + newlines.
     """
-    # 1) closing </li> → newline
+    # Convert closing </li> into newline
     text = re.sub(r'</li\s*>', '\n', html or '', flags=re.IGNORECASE)
-    # 2) opening <li…> → bullet + space
+    # Convert opening <li…> into bullet + space
     text = re.sub(r'<li[^>]*>', '• ', text, flags=re.IGNORECASE)
-    # 3) remove any remaining tags
+    # Strip all other tags
     text = re.sub(r'<[^>]+>', '', text)
     return text
 
@@ -181,34 +180,46 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     # Draw first page header/logo/title
     start_claim_page()
 
+    # ——— Claim Package (with proper wrapping + pagination) ———
+
+    from reportlab.platypus import Preformatted
+
+    # 1) sanitize out any HTML → bullets & newlines
     clean = sanitize_claim_text(claim_text)
 
-    # 3) prepare raw text exactly as entered
-    safe_text = (claim_text or "").expandtabs(4)
+    # 2) expand tabs → 4 spaces, normalize newlines
+    pre_text = clean.expandtabs(4)
 
-    # 4) build a Preformatted flowable
+    # 3) build a Preformatted flowable that preserves spacing
     pre_style = ParagraphStyle(
         name="PreformattedBody",
-        parent=body_style,       # uses your existing body_style
+        parent=body_style,
+        fontName="Helvetica",
+        fontSize=12,
+        leading=16,
         splitLongWords=False,
-        allowSplitting=False,
+        allowSplitting=True,
     )
-    pref = Preformatted(safe_text, pre_style)
+    pref = Preformatted(pre_text, pre_style)
 
-    # 5) split into page‐sized chunks
+    # 4) pagination parameters
+    left = inch
+    avail_w = width - 2*inch
+    y_start = height - 3*inch
+    avail_h = y_start - bottom_margin
+
+    # 5) split into page-sized chunks
     chunks = pref.split(avail_w, avail_h)
-
-    # 6) draw each chunk, paginate as needed
     y = y_start
+
+    # 6) draw each chunk with header on new page
     for i, chunk in enumerate(chunks):
         if i > 0:
             c.showPage()
             start_claim_page()
-            y       = y_start
-            avail_h = y_start - bottom_margin
-
+            y = y_start
         w, h = chunk.wrap(avail_w, avail_h)
-        chunk.drawOn(c, left_margin, y - h)
+        chunk.drawOn(c, left, y - h)
         y -= h
 
     # ─── PAGE 2+: Contents Estimate ───
