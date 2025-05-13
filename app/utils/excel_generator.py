@@ -7,29 +7,21 @@ import re
 
 from html import unescape
 
+# at the top of your file, alongside your other imports:
+import re
+
 def sanitize_claim_text(html: str) -> str:
     """
-    Strip minimal HTML (from Quill) into bullets and real new‐lines.
+    Turn simple <li>…</li> lists into bullets + newlines,
+    strip any other tags, and return plain-text.
     """
-    if not html:
-        return ""
-    # 1) turn each <li>…</li> into a bullet + newline
-    html = re.sub(
-        r'<li[^>]*>(.*?)</li>',
-        lambda m: "• " + unescape(m.group(1)).strip() + "\n",
-        html,
-        flags=re.S | re.I
-    )
-    # 2) replace any remaining <br> or <p> with newline
-    html = re.sub(r'<br\s*/?>', '\n', html, flags=re.I)
-    html = re.sub(r'</p\s*>', '\n', html, flags=re.I)
-    # 3) strip all other tags
-    html = re.sub(r'<[^>]+>', '', html)
-    # 4) unescape HTML entities
-    text = unescape(html)
-    # 5) collapse multiple newlines
-    text = re.sub(r'\n{3,}', '\n\n', text)
-    return text.strip()
+    # 1) closing </li> → newline
+    text = re.sub(r'</li\s*>', '\n', html or '', flags=re.IGNORECASE)
+    # 2) opening <li…> → bullet + space
+    text = re.sub(r'<li[^>]*>', '• ', text, flags=re.IGNORECASE)
+    # 3) remove any remaining tags
+    text = re.sub(r'<[^>]+>', '', text)
+    return text
 
 def generate_excel(pdf_path: str,
                    logo_path: str,
@@ -89,13 +81,16 @@ def generate_excel(pdf_path: str,
     ws1.insert_image('A1', logo_path, {'x_scale': 0.39, 'y_scale': 0.36})
 
     # ——— Claim Package body, sanitized & wrapped ———
-    raw_html = claim_text or ""
-    clean    = sanitize_claim_text(raw_html)
-    # expand any tabs into 4 non‐breaking spaces
-    lines    = [ln.replace('\t', '\u00A0'*4) for ln in clean.splitlines()]
-    value    = "\n".join(lines)
 
-    # write it into the big merged box
+    # 1) strip out any <li>…</li> HTML into bullets+newlines
+    clean = sanitize_claim_text(claim_text)
+
+    # 2) expand tabs → 4 spaces, normalize line breaks
+    lines = clean.expandtabs(4).split("\n")
+
+    # 3) re-join exactly as lines
+    value = "\n".join(lines)
+
     ws1.merge_range('A16:H61', value, top_fmt)
 
     ws1.set_column('AA:XFD', None, None, {'hidden': True})

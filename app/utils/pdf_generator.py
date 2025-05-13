@@ -20,32 +20,19 @@ from .excel_generator import generate_excel  # relative import
 from html import unescape
 import re
 
-# === sanitize_claim_text ====================================================
 def sanitize_claim_text(html: str) -> str:
     """
-    Convert simple Quill/HTML lists into bullets+newlines, strip tags,
-    unescape entities, collapse excess blank lines.
+    Turn simple <li>…</li> lists into bullets + newlines,
+    strip any other tags, and return plain-text.
     """
-    if not html:
-        return ""
-    # 1) <li>…</li> → “• content\n”
-    html = re.sub(
-        r'<li[^>]*>(.*?)</li>',
-        lambda m: "• " + unescape(m.group(1).strip()) + "\n",
-        html,
-        flags=re.S | re.I
-    )
-    # 2) <br> or </p> → newline
-    html = re.sub(r'<br\s*/?>', '\n', html, flags=re.I)
-    html = re.sub(r'</p\s*>', '\n', html, flags=re.I)
-    # 3) strip any other tags
-    html = re.sub(r'<[^>]+>', '', html)
-    # 4) unescape entities
-    text = unescape(html)
-    # 5) collapse 3+ newlines to just 2
-    text = re.sub(r'\n{3,}', '\n\n', text)
-    return text.strip()
-    
+    # 1) closing </li> → newline
+    text = re.sub(r'</li\s*>', '\n', html or '', flags=re.IGNORECASE)
+    # 2) opening <li…> → bullet + space
+    text = re.sub(r'<li[^>]*>', '• ', text, flags=re.IGNORECASE)
+    # 3) remove any remaining tags
+    text = re.sub(r'<[^>]+>', '', text)
+    return text
+
 # === COLOR PALETTE ===
 bg_color = colors.HexColor("#FEFDF9") 
 text_color = colors.HexColor("#3D4335")
@@ -194,28 +181,32 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     # Draw first page header/logo/title
     start_claim_page()
 
-    # ─── Claim Package (with proper wrapping + pagination) ───
+    clean = sanitize_claim_text(claim_text)
 
-    # prepare and clean text
-    cleaned = sanitize_claim_text(claim_text or "")
-    # Preformatted preserves spaces, tabs, newlines
+    # 3) prepare raw text exactly as entered
+    safe_text = (claim_text or "").expandtabs(4)
+
+    # 4) build a Preformatted flowable
     pre_style = ParagraphStyle(
-        name="PreFormattedBody",
-        parent=body_style,
+        name="PreformattedBody",
+        parent=body_style,       # uses your existing body_style
         splitLongWords=False,
-        allowSplitting=True,
-        wordWrap="LTR"
+        allowSplitting=False,
     )
-    pref = Preformatted(cleaned, pre_style)
+    pref = Preformatted(safe_text, pre_style)
 
-    # split into page-sized chunks
+    # 5) split into page‐sized chunks
     chunks = pref.split(avail_w, avail_h)
+
+    # 6) draw each chunk, paginate as needed
     y = y_start
     for i, chunk in enumerate(chunks):
         if i > 0:
             c.showPage()
             start_claim_page()
-            y = y_start
+            y       = y_start
+            avail_h = y_start - bottom_margin
+
         w, h = chunk.wrap(avail_w, avail_h)
         chunk.drawOn(c, left_margin, y - h)
         y -= h
