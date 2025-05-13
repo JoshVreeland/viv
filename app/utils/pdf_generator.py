@@ -48,6 +48,15 @@ just_style = ParagraphStyle(
     wordWrap='CJK'
 )
 
+desc_style = ParagraphStyle(
+    name="Description",
+    parent=body_style,
+    fontSize=10,
+    leading=14,
+    splitLongWords=True,
+    wordWrap="CJK"
+)
+
 estimate_body_style = ParagraphStyle(
     name="EstimateBody",
     parent=body_style,
