@@ -178,21 +178,19 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     avail_h  = y_start - bottom_margin
     y = y_start
 
-    # Draw first page header/logo/title
+    # === Claim Package (with literal formatting + pagination) ===
     start_claim_page()
 
-    # ——— Claim Package (with proper wrapping + pagination) ———
+    # 1) take exactly what the user typed:
+    raw = claim_text or ""
 
-    # ——— sanitize & split into lines ———
-    clean    = sanitize_claim_text(claim_text)
-    plain    = clean.expandtabs(4)
-    lines    = plain.split("\n")
-    joined   = "\n".join(lines)
+    # 2) expand tabs to 4 spaces:
+    raw = raw.expandtabs(4)
 
-    # ——— build a single Preformatted flowable ———
+    # 3) Preformatted will preserve ALL spaces, newlines, bullets, numbers, etc.
     from reportlab.platypus import Preformatted
     pre_style = ParagraphStyle(
-        name="Pre",
+        name="PreBody",
         parent=body_style,
         fontName="Helvetica",
         fontSize=12,
@@ -200,21 +198,24 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
         splitLongWords=False,
         allowSplitting=True,
     )
-    pref = Preformatted(joined, pre_style)
+    pref = Preformatted(raw, pre_style)
 
-    # ——— paginate + draw exactly like you do for Contents Estimate ———
-    avail_w = width - 2*inch
-    y_start = height - 3*inch
+    # 4) figure out how much room fits on each page:
+    left = inch
+    avail_w = width - left_margin - right_margin
+    y_start = height - 3 * inch
     avail_h = y_start - bottom_margin
-    chunks  = pref.split(avail_w, avail_h)
-    y       = y_start
+
+    # 5) split into pages, draw each chunk with header/logo:
+    chunks = pref.split(avail_w, avail_h)
+    y = y_start
     for i, chunk in enumerate(chunks):
         if i > 0:
             c.showPage()
             start_claim_page()
             y = y_start
         w, h = chunk.wrap(avail_w, avail_h)
-        chunk.drawOn(c, inch, y - h)
+        chunk.drawOn(c, left, y - h)
         y -= h
 
     # ─── PAGE 2+: Contents Estimate ───

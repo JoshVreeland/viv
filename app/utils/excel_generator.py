@@ -76,14 +76,10 @@ def generate_excel(pdf_path: str,
     ws1.merge_range('A1:H15', '', border_fmt)
     ws1.insert_image('A1', logo_path, {'x_scale': 0.39, 'y_scale': 0.36})
 
-    # ——— Claim Package body, sanitized & wrapped ———
-    # sanitize Quill HTML → plain text with bullets & newlines
-    clean = sanitize_claim_text(claim_text or "")
-    # expand tabs → 4 spaces, keep line breaks
-    plain = clean.expandtabs(4)
-
-    # 3) write your entire text into the merged cell
-    ws1.merge_range('A16:H61', plain, top_fmt)
+    # ——— Claim Package body, literal + wrapped ———
+    raw = (claim_text or "").expandtabs(4)
+    # dump it all into the merged cell; xlsxwriter will wrap on each newline
+    ws1.merge_range('A16:H61', raw, top_fmt)
     # hide everything past column H
     ws1.set_column('AA:XFD', None, None, {'hidden': True})
 
