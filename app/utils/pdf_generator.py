@@ -188,6 +188,7 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     title_y = height - 1.9 * inch
     y_start = title_y - 0.5 * inch
     avail_w = width - left_margin - right_margin
+    avail_h  = y_start - bottom_margin
     y = y_start
 
     # Draw first page header/logo/title
