@@ -173,7 +173,7 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     # prepare claim_text, preserve tabs as 4 non-breaking spaces
     safe = (claim_text or "").expandtabs(4)
     esc  = saxutils.escape(safe).replace("\r\n","\n").replace("\n","<br/>")
-    para = Paragraph(esc, body_style)
+    esc = f'<pre>{esc}</pre>'  # Wrap in preformatted text tags
 
     # compute available area
     y_start = height - 1.9*inch
