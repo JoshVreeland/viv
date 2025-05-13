@@ -13,6 +13,7 @@ from reportlab.platypus import XPreformatted
 from xml.sax import saxutils
 from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph
+from reportlab.platypus import Preformatted
 import xml.sax.saxutils as saxutils
 import boto3
             
@@ -165,20 +166,27 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     start_claim_page()
 
     # ——— Claim Package via Paragraph.split() ———
-    claim_text = (claim_text or "").expandtabs(4)
-    safe       = saxutils.escape(claim_text).replace("\r\n","\n").replace("\n","<br/>")
-    para       = Paragraph(safe, body_style)
-    avail_h    = y - bottom_margin
-    chunks     = para.split(avail_w, avail_h)
-    for i, chunk in enumerate(chunks):
+
+    # escape & keep all tabs/spaces/newlines
+    raw = saxutils.escape((claim_text or "").expandtabs(4))
+    raw = raw.replace('\r\n', '\n')
+    pre = Preformatted(raw, body_style)
+
+    # available width & height for text
+    avail_w = width - 2 * inch
+    avail_h = height - 3 * inch
+
+    # split into page‐sized chunks
+    chunks = pre.split(avail_w, avail_h)
+
+    y_start = height - 3 * inch
+    for i, frag in enumerate(chunks):
         if i > 0:
             c.showPage()
             start_claim_page()
-            y        = y_start
-            avail_h  = y - bottom_margin
-        w, h = chunk.wrap(avail_w, avail_h)
-        chunk.drawOn(c, left_margin, y - h)
-        y -= h
+        w, h = frag.wrap(avail_w, avail_h)
+        frag.drawOn(c, inch, y_start - h)
+        y_start -= h  # move down for next fragment
 
     # ─── PAGE 2+: Contents Estimate ───
     c.showPage()
