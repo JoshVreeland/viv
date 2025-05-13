@@ -63,28 +63,39 @@
     
     <!-- Page title -->
     <div style="text-align: center; margin-bottom: 2rem;">
-        <img src="/static/logo2.png" alt="Logo" style="height: 100px;">
-        <h1 style="margin-top: 1rem; color: #3D4335;">Claim Package</h1>
+      <img src="/static/logo2.png" alt="Logo" style="height: 100px;">
+      <h1 style="margin-top: 1rem; color: #3D4335;">Claim Package</h1>
     </div>
-    
 
     <form action="/contents-estimate" method="post">
-        <textarea
-          name="claim_text"
-          rows="15"
-          placeholder="Enter claim package text here…"
-          required
-          style="width:100%; padding:10px; font-family:'Lato', sans-serif; font-size:1rem; line-height:1.4; resize:vertical;"
-        ></textarea>
-        <br><br>
-        <input type="hidden" name="client_name" value="{{ client_name }}">
-        <button
-          type="submit"
-          style="font-family:'Lato', sans-serif; padding:10px 20px; font-weight:bold; color:#3D4335"
-        >
-          Next: Contents Estimate
-        </button>
-      </form>      
+      <textarea
+        name="claim_text"
+        rows="15"
+        placeholder="Enter claim package text here…"
+        required
+        style="
+          width: 100%;
+          padding: 10px;
+          font-family: 'Lato', sans-serif;
+          font-size: 1rem;
+          line-height: 1.4;
+          resize: vertical;
+        "
+      ></textarea>
+      <br><br>
+      <input type="hidden" name="client_name" value="{{ client_name }}">
+      <button
+        type="submit"
+        style="
+          font-family: 'Lato', sans-serif;
+          padding: 10px 20px;
+          font-weight: bold;
+          color: #3D4335;
+        "
+      >
+        Next: Contents Estimate
+      </button>
+    </form>
 
     <script>
     (function() {
@@ -109,9 +120,9 @@
       });
     })();
     </script>
-</body>
-</html>
 
+  </body>
+</html>
 
 
 
