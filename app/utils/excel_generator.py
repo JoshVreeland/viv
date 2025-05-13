@@ -45,11 +45,12 @@ def generate_excel(pdf_path: str,
     header_fmt      = common_fmt(bg_color='#3d4336', font_color='#FFFFFF', text_wrap=True, align='center', valign='vcenter', border=1)
     top_fmt         = common_fmt(bg_color='#FFFDFA', text_wrap=True, indent=1,  align='left', valign='top', border=0)
 
-    # === SHEET 1: Claim Package (unchanged) ===
+    # === SHEET 1: Claim Package ===
     ws1 = wb.add_worksheet('Claim Package')
     for r in range(100):
         for c in range(30):
             ws1.write_blank(r, c, None, bg_fmt)
+
     ws1.hide_gridlines(2)
     ws1.set_tab_color('#FFFDFA')
     ws1.set_column('A:H', 15)
@@ -58,20 +59,21 @@ def generate_excel(pdf_path: str,
             ws1.write_blank(r, c, None, bg_fmt)
     for r in range(9, 15):
         ws1.set_row(r, 20, border_fmt)
-    ws1.merge_range('A1:H14', '', border_fmt)
+    ws1.merge_range('A1:H15', '', border_fmt)
     ws1.insert_image('A1', logo_path, {'x_scale': 0.39, 'y_scale': 0.36})
 
-    # 2) Build your value by converting every tab into 4 non-breaking spaces
+    # 2) build your value by converting every tab into 4 NBSPs
     lines = claim_text.split("\n")
     out   = []
     for line in lines:
+        # replace every tab with 4 non-breaking spaces
         line = line.replace("\t", "\u00A0" * 4)
         out.append(line)
     value = "\n".join(out)
 
-    # 3) Write that into the merged cell (A16:H61), with top alignment
+    # 3) write that into the merged cell
     ws1.merge_range('A16:H61', value, top_fmt)
-    ws1.set_column('AA:XFD', None, None, { 'hidden': True })
+    ws1.set_column('AA:XFD', None, None, {'hidden': True})
 
     # === SHEET 2: Contents Estimate (your specific tweaks) ===
     ws2 = wb.add_worksheet('Contents Estimate')
