@@ -33,17 +33,19 @@ body_style = ParagraphStyle(
     leading=16,
     textColor=colors.HexColor("#3D4335"),
     allowSplitting=True,
-    splitLongWords=False,
+    splitLongWords=True,
     allowWidows=1,
     allowOrphans=1,
-    wordWrap="LTR"
+    wordWrap="CJK"
 )
 
 just_style = ParagraphStyle(
-    name="Justification",
+    name='Justification',
     parent=body_style,
-    fontSize=12,
-    leading=14
+    fontSize=10,
+    leading=14,
+    splitLongWords=True,
+    wordWrap='CJK'
 )
 
 estimate_body_style = ParagraphStyle(
