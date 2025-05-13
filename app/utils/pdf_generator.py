@@ -33,10 +33,10 @@ body_style = ParagraphStyle(
     leading=16,
     textColor=colors.HexColor("#3D4335"),
     allowSplitting=True,
-    splitLongWords=True,
+    splitLongWords=False,
     allowWidows=1,
     allowOrphans=1,
-    wordWrap="CJK"
+    wordWrap="LTR"
 )
 
 just_style = ParagraphStyle(
