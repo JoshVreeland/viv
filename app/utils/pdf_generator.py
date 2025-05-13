@@ -15,7 +15,7 @@ from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph
 from reportlab.platypus import Preformatted
 import xml.sax.saxutils as saxutils
-from .utils.pdf_generator import sanitize_claim_text
+from .excel_generator import sanitize_claim_text
 import boto3
 from .excel_generator import generate_excel  # relative import
 from html import unescape
