@@ -90,7 +90,7 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
     # Define column widths for each section
     cat_x, cat_w = left_margin, 1.5 * inch           # Category column, width 1.5 inches
     desc_x, desc_w = cat_x + cat_w + 0.2 * inch, 2.0 * inch  # Description column, width 2.5 inches
-    just_x, just_w = desc_x + desc_w + 0.2 * inch, 2.0 * inch  # Justification column, width 2.5 inches
+    just_x, just_w = desc_x + desc_w + 0.2 * inch, 1.5 * inch  # Justification column, width 2.5 inches
     total_x = width - right_margin  # Total column, right-aligned
 
     # Helper functions
