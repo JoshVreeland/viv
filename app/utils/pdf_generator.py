@@ -1,6 +1,5 @@
 import os
 from reportlab.pdfgen import canvas
-from bs4 import BeautifulSoup
 from reportlab.lib.pagesizes import LETTER  
 from reportlab.lib.units import inch
 from reportlab.lib.utils import ImageReader
