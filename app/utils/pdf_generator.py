@@ -18,6 +18,21 @@ import xml.sax.saxutils as saxutils
 import boto3
             
 from .excel_generator import generate_excel  # relative import
+
+import re
+
+def sanitize_claim_text(html: str) -> str:
+    if not html:
+        return ""
+    # turn each opening <li> into a bullet + space
+    clean = re.sub(r'<li[^>]*>', '• ', html)
+    # turn each closing </li> into a newline
+    clean = clean.replace('</li>', '\n')
+    # drop any other tags
+    clean = re.sub(r'<[^>]+>', '', clean)
+    # collapse any &nbsp; into real spaces
+    clean = clean.replace('&nbsp;', ' ')
+    return clean
     
 # === COLOR PALETTE ===
 bg_color = colors.HexColor("#FEFDF9") 
@@ -191,11 +206,15 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
 
     # ─── Claim Package (with proper wrapping + pagination) ───
 
-    # 1) Expand tabs to 4 spaces and normalize newlines
-    safe = (claim_text or "").expandtabs(4).replace("\r\n", "\n")
+    # 1) Sanitize any incoming HTML (ol/li/etc) → bullets + real newlines
+    raw_html = claim_text or ""
+    cleaned  = sanitize_claim_text(raw_html)
 
-    # 2) Escape XML chars so '<' & '>' don't break things
-    esc = saxutils.escape(safe)
+    # 2) Expand tabs to 4 spaces and normalize newlines
+    safe     = cleaned.expandtabs(4).replace("\r\n", "\n")
+
+    # 3) Escape XML chars so '<' & '>' don't break things
+    esc      = saxutils.escape(safe)
 
     # 3) Create a Preformatted flowable that preserves spaces & line breaks
     from reportlab.platypus import Preformatted

@@ -3,7 +3,20 @@ import os
 import xlsxwriter
 import boto3
 from openpyxl.styles import Border, Side, Alignment
+import re
 
+def sanitize_claim_text(html: str) -> str:
+    if not html:
+        return ""
+    # turn each opening <li> into a bullet + space
+    clean = re.sub(r'<li[^>]*>', '• ', html)
+    # turn each closing </li> into a newline
+    clean = clean.replace('</li>', '\n')
+    # drop any other tags
+    clean = re.sub(r'<[^>]+>', '', clean)
+    # collapse any &nbsp; into real spaces
+    clean = clean.replace('&nbsp;', ' ')
+    return clean
 
 def generate_excel(pdf_path: str,
                    logo_path: str,
@@ -71,8 +84,21 @@ def generate_excel(pdf_path: str,
         out.append(line)
     value = "\n".join(out)
 
-    # 3) write that into the merged cell
+    # 2) sanitize any incoming HTML → bullets + newlines
+    claim_text = sanitize_claim_text(claim_text)
+
+    # 3) build your value by converting every tab into 4 NBSPs
+    lines = claim_text.split("\n")
+    out   = []
+    for line in lines:
+        # replace every tab with 4 non-breaking spaces
+        line = line.replace("\t", "\u00A0" * 4)
+        out.append(line)
+    value = "\n".join(out)
+
+    # 4) write that into the merged cell
     ws1.merge_range('A16:H61', value, top_fmt)
+
     ws1.set_column('AA:XFD', None, None, {'hidden': True})
 
     # === SHEET 2: Contents Estimate (your specific tweaks) ===
