@@ -145,27 +145,27 @@ def generate_pdf(logo_path, client_name, claim_text, estimate_data):
             c.drawCentredString(width / 2, height - 1.9 * inch, "Contents Estimate")
 
     def html_to_plain(html: str) -> str:
-    """
-    Convert simple HTML (from Quill) into plain text with newlines and bullets.
-    """
-    soup = BeautifulSoup(html or "", "html.parser")
+        """
+        Convert simple HTML (from Quill) into plain text with newlines and bullets.
+        """
+        soup = BeautifulSoup(html or "", "html.parser")
 
-    # <br> → real newline
-    for br in soup.find_all("br"):
-        br.replace_with("\n")
+        # <br> → real newline
+        for br in soup.find_all("br"):
+            br.replace_with("\n")
 
-    # put a blank line before each <p>
-    for p in soup.find_all("p"):
-        p.insert_before("\n")
+        # put a blank line before each <p>
+        for p in soup.find_all("p"):
+            p.insert_before("\n")
 
-    # turn list items into bullets
-    for li in soup.find_all("li"):
-        li.insert_before("• ")
+        # turn list items into bullets
+        for li in soup.find_all("li"):
+            li.insert_before("• ")
 
-    text = soup.get_text()
-    # collapse stray blank lines
-    lines = [ln.rstrip() for ln in text.splitlines()]
-    return "\n".join(lines).strip()
+        text = soup.get_text()
+        # collapse stray blank lines
+        lines = [ln.rstrip() for ln in text.splitlines()]
+        return "\n".join(lines).strip()
 
     def draw_table_headers(y_pos):
         c.setFont("Helvetica-Bold", 12)
