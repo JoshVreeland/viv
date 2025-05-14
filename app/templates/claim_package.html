@@ -99,6 +99,7 @@
                 const delta = quill.getContents();
                 console.log("🚀 Submitting delta:", delta);
                 document.getElementById('claim_delta').value = JSON.stringify(delta);
+                console.log("🧠 Final hidden input value:", document.getElementById('claim_delta').value);
             });
         });
     </script>
