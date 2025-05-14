@@ -65,41 +65,44 @@
         <h1 style="margin-top: 1rem; color: #3D4335;">Claim Package</h1>
     </div>  
 
-    <!-- Quill CSS -->
+    <!-- Quill CSS and JS -->
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-    <!-- Quill JS -->
     <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
 
     <!-- Claim Summary Form -->
     <form action="/contents-estimate"
           method="post"
-          id="claim-form"
-          onsubmit="
-              document.getElementById('claim_delta').value =
-                  JSON.stringify(window.quill.getContents());
-          ">
-        <!-- 1) Quill editor container -->
+          id="claim-form">
         <div id="claim-editor" style="height:300px;background:white;"></div>
-
-        <!-- 2) Hidden field (will carry the JSON) -->
         <input type="hidden" name="claim_delta" id="claim_delta">
-
-        <!-- 3) Submit -->
         <button type="submit">Next: Contents Estimate</button>
     </form>
 
-    <!-- Initialize Quill globally BEFORE the form -->
     <script>
-        window.quill = new Quill('#claim-editor', {
-            theme: 'snow',
-            modules: {
-                toolbar: [
-                    [{ header: [1, 2, false] }],
-                    ['bold', 'italic', 'underline'],
-                    [{ list: 'ordered' }, { list: 'bullet' }],
-                    ['clean']
-                ]
-            }
+        window.addEventListener("load", function () {
+            // 1) init Quill
+            var quill = new Quill('#claim-editor', {
+                theme: 'snow',
+                modules: {
+                    toolbar: [
+                        [{ header: [1, 2, false] }],
+                        ['bold', 'italic', 'underline'],
+                        [{ list: 'ordered' }, { list: 'bullet' }],
+                        ['clean']
+                    ]
+                }
+            });
+
+            // 2) get hidden input
+            var hidden = document.getElementById('claim_delta');
+
+            // 3) sync initial value
+            hidden.value = JSON.stringify(quill.getContents());
+
+            // 4) update on every text change
+            quill.on('text-change', function() {
+                hidden.value = JSON.stringify(quill.getContents());
+            });
         });
     </script>
       
