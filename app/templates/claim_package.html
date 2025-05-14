@@ -96,7 +96,7 @@
             });
 
             document.getElementById('claim-form').addEventListener('submit', function(evt) {
-                const delta = quill.getContents();
+                const delta = quill.getContents();  // ✅ define delta before using it
                 console.log("🚀 Submitting delta:", delta);
                 document.getElementById('claim_delta').value = JSON.stringify(delta);
                 console.log("🧠 Final hidden input value:", document.getElementById('claim_delta').value);
