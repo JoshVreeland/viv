@@ -83,6 +83,8 @@
 
     <script>
         window.addEventListener("load", function () {
+            console.log("✅ JS loaded");  // Proof that this runs
+
             var quill = new Quill('#claim-editor', {
                 theme: 'snow',
                 modules: {
@@ -95,14 +97,14 @@
                 }
             });
 
-            var form = document.getElementById('claim-form');
-            var hiddenInput = document.getElementById('claim_delta');
+            var form = document.getElementById("claim-form");
+            var hidden = document.getElementById("claim_delta");
 
-            form.addEventListener('submit', function(evt) {
-                var delta = quill.getContents();
-                var json = JSON.stringify(delta);
-                hiddenInput.value = json;
-                console.log("🚀 SUBMITTED:", json);
+            form.addEventListener("submit", function (evt) {
+                console.log("🔥 Submit handler triggered");
+                const delta = quill.getContents();
+                hidden.value = JSON.stringify(delta);
+                console.log("🧠 Final hidden value:", hidden.value);
             });
         });
     </script>
