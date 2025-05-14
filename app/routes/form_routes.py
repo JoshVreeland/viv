@@ -47,8 +47,17 @@ async def contents_estimate_post(
 ):
     import json
 
+    print("🔥 HIT /contents-estimate")
+
     # 1. Parse Quill Delta
-    delta = json.loads(claim_delta)
+    try:
+        delta = json.loads(claim_delta)
+    except Exception as e:
+        print("❌ Failed to parse delta JSON:", e)
+        return templates.TemplateResponse(
+            "error.html",
+            {"request": request, "error": "Invalid claim_delta JSON"}
+        )
 
     # 2. Clean and format text with bullets + indentation
     lines = []
@@ -56,7 +65,7 @@ async def contents_estimate_post(
     for op in delta.get("ops", []):
         text = op.get("insert", "").rstrip("\n").strip()
         if not text:
-            continue  # skip empty inserts or just newlines
+            continue  # skip empty inserts
 
         attrs = op.get("attributes", {}) or {}
         indent = attrs.get("indent", 0)
@@ -73,18 +82,17 @@ async def contents_estimate_post(
 
     claim_text = "\n".join(lines)
 
-    # 3. Return it to the form as a hidden input for finalize
+    print("✅ Final parsed claim_text:")
+    print(claim_text)
+    print("⬆️ END claim_text")
+
     return templates.TemplateResponse(
         "contents_estimate.html",
         {
             "request": request,
-            "claim_delta": claim_text
+            "claim_delta": claim_text  # sends this into the hidden input
         }
     )
-
-    print("--- CLAIM TEXT START ---")
-    print(claim_text)
-    print("--- CLAIM TEXT END ---")
 
 
 @router.post("/finalize")
