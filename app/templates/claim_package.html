@@ -93,7 +93,7 @@
         });
 
         document.getElementById('claim-form').addEventListener('submit', function(evt) {
-            const json = JSON.stringify(quill.getContents());
+            const delta = quill.getContents();
             console.log("🚀 Submitting delta:", delta);  // ← Confirm list attributes exist!
             document.getElementById('claim_delta').value = JSON.stringify(delta);
             // no need to return false/true here
