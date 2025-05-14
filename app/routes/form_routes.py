@@ -63,6 +63,8 @@ async def contents_estimate_post(
     lines = []
 
     for op in delta.get("ops", []):
+        print("📦 OP:", op)  # ← put it RIGHT HERE
+
         text = op.get("insert", "").rstrip("\n").strip()
         if not text:
             continue  # skip empty inserts
