@@ -52,24 +52,17 @@ async def contents_estimate_post(
     lines = []
 
     for op in delta.get("ops", []):
-        text = op.get("insert", "").replace("\n", "").strip()
+        text = op.get("insert", "").rstrip("\n").strip()
         if not text:
-            continue  # Skip blanks
+            continue  # skip blank lines
 
         attrs = op.get("attributes", {}) or {}
         indent = attrs.get("indent", 0)
 
         if attrs.get("list"):
-            # Smarter bullet formatting
             if attrs["list"] == "ordered":
-                if indent == 0:
-                    bullet = "1."
-                elif indent == 1:
-                    bullet = "a."
-                elif indent == 2:
-                    bullet = "i."
-                else:
-                    bullet = "•"
+                # Format by indent level
+                bullet = "1." if indent == 0 else "a." if indent == 1 else "i."
             else:
                 bullet = "•"
             prefix = "    " * indent + bullet + " "
@@ -79,14 +72,14 @@ async def contents_estimate_post(
 
     claim_text = "\n".join(lines)
 
-    # ✅ PUT THIS RIGHT AFTER claim_text IS READY
     return templates.TemplateResponse(
         "contents_estimate.html",
         {
             "request": request,
-            "claim_delta": claim_text  # send cleaned-up version into the next form
+            "claim_delta": claim_text  # used as hidden field for finalization
         }
     )
+
 
 @router.post("/finalize")
 async def finalize_form(
