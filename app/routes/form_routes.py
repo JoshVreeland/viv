@@ -31,6 +31,9 @@ templates = Jinja2Templates(directory="app/templates")
 async def login(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
+@router.get("/contents-estimate", response_class=HTMLResponse)
+async def contents_estimate_get(request: Request):
+    return templates.TemplateResponse("contents_estimate.html", {"request": request})
 
 @router.get("/claim-package", response_class=HTMLResponse)
 async def claim_package(request: Request):
