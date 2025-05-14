@@ -72,7 +72,7 @@
     <!-- Claim Summary Form -->
     <form action="/contents-estimate"
           method="post"
-          id="claim-form">
+          id="claim-form"
           onsubmit="document.getElementById('claim_delta').value = JSON.stringify(window.quill.getContents());">
         <div id="claim-editor" style="height:300px;background:white;"></div>
         <input type="hidden" name="claim_delta" id="claim_delta">
