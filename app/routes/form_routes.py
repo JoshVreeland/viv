@@ -50,24 +50,41 @@ async def contents_estimate_post(
 
     # build a plain-text version with bullets + indentation
     lines = []
+
     for op in delta.get("ops", []):
-        text  = op.get("insert", "")
+        text = op.get("insert", "").replace("\n", "").strip()
+        if not text:
+            continue  # Skip blanks
+
         attrs = op.get("attributes", {}) or {}
+        indent = attrs.get("indent", 0)
+
         if attrs.get("list"):
-            bullet = "1. " if attrs["list"] == "ordered" else "• "
-            indent = attrs.get("indent", 0)
-            prefix = "    " * indent + bullet
-            lines.append(prefix + text.strip())
+            # Smarter bullet formatting
+            if attrs["list"] == "ordered":
+                if indent == 0:
+                    bullet = "1."
+                elif indent == 1:
+                    bullet = "a."
+                elif indent == 2:
+                    bullet = "i."
+                else:
+                    bullet = "•"
+            else:
+                bullet = "•"
+            prefix = "    " * indent + bullet + " "
+            lines.append(prefix + text)
         else:
             lines.append(text)
-    claim_delta = "\n".join(lines)
 
-    # render the contents_estimate page, passing only claim_delta
+    claim_text = "\n".join(lines)
+
+    # ✅ PUT THIS RIGHT AFTER claim_text IS READY
     return templates.TemplateResponse(
         "contents_estimate.html",
         {
-            "request":     request,
-            "claim_delta": claim_delta
+            "request": request,
+            "claim_delta": claim_text  # send cleaned-up version into the next form
         }
     )
 
