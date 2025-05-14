@@ -123,7 +123,7 @@ async def finalize_form(
     pdf_url, excel_url = generate_pdf(
         logo_path=logo_path,
         client_name=client_name, 
-        claim_text=claim_text,  
+        claim_delta=claim_delta,  
         estimate_data=estimate_data
     )
 
