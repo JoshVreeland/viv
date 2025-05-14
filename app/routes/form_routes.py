@@ -84,7 +84,7 @@ async def finalize_form(
     justification: Optional[List[str]]   = Form([]),
     total: Optional[List[str]]           = Form([]),
     client_name: str                     = Form(...),
-    claim_text: str                      = Form(...),
+    claim_delta: str = Form(...),  # ✅ insert it here!
     db: Session                         = Depends(get_db), 
     user: User                          = Depends(require_admin)
 ):
@@ -151,9 +151,6 @@ async def finalize_form(
 
     # 7) Redirect to your download endpoint for the freshly-uploaded PDF
     return RedirectResponse(pdf_url, status_code=status.HTTP_303_SEE_OTHER)
-
-
-
 
 @router.get("/clients", response_class=HTMLResponse)
 def list_files(
